@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
-import { Plus, Pencil, Trash2, UserCheck, UserX, Loader2, Upload, X } from "lucide-react";
+import { Pencil, Trash2, UserCheck, UserX, Loader2, Upload, X } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,7 @@ const newLOSchema = z.object({
   nmlsNumber: z.string().min(1, "Required"),
   officePhone: z.string().optional(),
   cellPhone: z.string().optional(),
+  website: z.string().optional().or(z.literal("")),
   branchStreet: z.string().optional(),
   branchSuite: z.string().optional(),
   branchCity: z.string().optional(),
@@ -137,18 +138,10 @@ export default function AdminLoanOfficersPage() {
   const onSubmit = async (data: NewLOForm) => {
     setIsSubmitting(true);
     try {
-      const addrParts: string[] = [];
-      if (data.branchStreet?.trim()) addrParts.push(data.branchStreet.trim());
-      if (data.branchSuite?.trim()) addrParts.push(`Suite ${data.branchSuite.trim()}`);
-      if (data.branchCity?.trim()) addrParts.push(data.branchCity.trim());
-      const stateZip = [data.branchState?.trim(), data.branchZip?.trim()].filter(Boolean).join(" ");
-      if (stateZip) addrParts.push(stateZip);
-      const branchAddress = addrParts.join(", ") || undefined;
-
       const res = await fetch("/api/admin/loan-officers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, branchAddress, headshotUrl }),
+        body: JSON.stringify({ ...data, headshotUrl }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -252,17 +245,18 @@ export default function AdminLoanOfficersPage() {
                 {fieldEl("officePhone", "Office phone")}
                 {fieldEl("cellPhone", "Cell phone")}
               </div>
+              {fieldEl("website", "Website", "text", "cliffcomortgage.com")}
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Branch Address</p>
+                <Label className="text-sm font-medium text-slate-700 mb-1.5 block">Branch address</Label>
                 <div className="space-y-2">
-                  {fieldEl("branchStreet", "Street address")}
+                  <Input className="h-9" placeholder="Street address" {...register("branchStreet")} />
                   <div className="grid grid-cols-3 gap-2">
-                    {fieldEl("branchSuite", "Suite #")}
-                    <div className="col-span-2">{fieldEl("branchCity", "City")}</div>
+                    <Input className="h-9" placeholder="Suite #" {...register("branchSuite")} />
+                    <Input className="h-9 col-span-2" placeholder="City" {...register("branchCity")} />
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    {fieldEl("branchState", "State")}
-                    <div className="col-span-2">{fieldEl("branchZip", "ZIP")}</div>
+                    <Input className="h-9" placeholder="State" {...register("branchState")} />
+                    <Input className="h-9 col-span-2" placeholder="ZIP" {...register("branchZip")} />
                   </div>
                 </div>
               </div>

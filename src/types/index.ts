@@ -7,8 +7,10 @@ export interface CompanySettings {
   primaryColor: string;
   secondaryColor: string;
   logoUrl: string | null;
+  logoUrlLight: string | null;
   website: string | null;
   phone: string | null;
+  licenseText: string | null;
 }
 
 export interface LoanOfficer {
@@ -23,6 +25,11 @@ export interface LoanOfficer {
   email: string;
   website: string | null;
   branchAddress: string | null;
+  branchStreet: string | null;
+  branchSuite: string | null;
+  branchCity: string | null;
+  branchState: string | null;
+  branchZip: string | null;
   branchNmls: string | null;
   disclaimer: string | null;
   headshotUrl: string | null;
@@ -42,6 +49,11 @@ export interface Realtor {
   email: string | null;
   website: string | null;
   officeAddress: string | null;
+  officeStreet: string | null;
+  officeSuite: string | null;
+  officeCity: string | null;
+  officeState: string | null;
+  officeZip: string | null;
   headshotUrl: string | null;
   companyLogoUrl: string | null;
   brandPrimary: string | null;
@@ -100,6 +112,7 @@ export interface Flyer {
   pdfUrl: string | null;
   shareToken: string | null;
   status: FlyerStatus;
+  distributionState: string | null;
   createdAt: string;
   updatedAt: string;
 }

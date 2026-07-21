@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   Plus,
   Pencil,
+  Eye,
   Trash2,
   Share2,
   Download,
@@ -58,6 +59,7 @@ function FlyerCard({
 }) {
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const propertyData = flyer.propertyData as any;
   const accentColor = templateColors[flyer.templateId] || "#6633cc";
 
@@ -155,6 +157,11 @@ function FlyerCard({
               <Pencil className="w-3.5 h-3.5 text-slate-500" />
             </Link>
           </Button>
+          <Button asChild variant="ghost" size="icon" className="h-8 w-8" title="Preview">
+            <Link href={`/dashboard/flyers/${flyer.id}/preview`}>
+              <Eye className="w-3.5 h-3.5 text-slate-500" />
+            </Link>
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -180,36 +187,36 @@ function FlyerCard({
               )}
             </Button>
           )}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 ml-auto hover:bg-red-50"
-                title="Delete"
-              >
-                <Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-red-500" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete flyer?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete this flyer and cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={onDelete}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 ml-auto text-red-500 hover:bg-red-50 hover:text-red-600 px-2"
+            onClick={() => setConfirmOpen(true)}
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1" />
+            Delete
+          </Button>
         </div>
+
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete flyer?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete this flyer and cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => { setConfirmOpen(false); onDelete(); }}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

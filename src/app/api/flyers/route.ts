@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const {
     templateId, title, propertyData, realtorId,
-    loanScenarios, qrCodeData, status,
+    loanScenarios, qrCodeData, status, distributionState,
   } = body;
 
   // Validate realtor ownership if provided
@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       qrCodeData: qrCodeData || null,
       shareToken,
       status: status || "DRAFT",
+      distributionState: distributionState || null,
     },
   });
 

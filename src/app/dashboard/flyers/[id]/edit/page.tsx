@@ -18,16 +18,22 @@ import {
 } from "@/components/ui/dialog";
 import { cn, formatCurrency } from "@/lib/utils";
 import { FLYER_TEMPLATES } from "@/types";
+import { US_STATES } from "@/lib/us-states";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type {
   Realtor, PropertyData, LoanScenario, MLSSearchResult, OptimalBlueProduct, Flyer,
 } from "@/types";
 
-const STEPS = ["Template", "Property", "Realtor", "Financing", "Preview"];
-
-function StepIndicator({ currentStep }: { currentStep: number }) {
+function StepIndicator({ currentStep, steps }: { currentStep: number; steps: string[] }) {
   return (
     <div className="flex items-center gap-0 mb-8 overflow-x-auto pb-1">
-      {STEPS.map((label, idx) => (
+      {steps.map((label, idx) => (
         <div key={idx} className="flex items-center shrink-0">
           <div className={cn("flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
             idx < currentStep ? "bg-emerald-100 text-emerald-700" : idx === currentStep ? "bg-blue-900 text-white" : "bg-slate-100 text-slate-400"
@@ -39,7 +45,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             </span>
             {label}
           </div>
-          {idx < STEPS.length - 1 && (
+          {idx < steps.length - 1 && (
             <div className={cn("w-6 h-px mx-1", idx < currentStep ? "bg-emerald-300" : "bg-slate-200")} />
           )}
         </div>
@@ -66,6 +72,7 @@ export default function EditFlyerPage() {
   const [realtorId, setRealtorId] = useState<string | null>(null);
   const [scenarios, setScenarios] = useState<Partial<LoanScenario>[]>([]);
   const [qrUrl, setQrUrl] = useState("");
+  const [distributionState, setDistributionState] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [realtors, setRealtors] = useState<Realtor[]>([]);
@@ -80,6 +87,11 @@ export default function EditFlyerPage() {
 
   const selectedTemplate = FLYER_TEMPLATES.find((t) => t.id === templateId)!;
   const hasFinancing = selectedTemplate?.hasLoanScenarios;
+
+  const steps = hasFinancing
+    ? ["Template", "Property", "Realtor", "Financing", "Additional Details"]
+    : ["Template", "Property", "Realtor", "Additional Details"];
+
   const visibleSteps = hasFinancing ? [0, 1, 2, 3, 4] : [0, 1, 2, 4];
   const currentVisibleStep = visibleSteps.indexOf(step);
 
@@ -97,6 +109,7 @@ export default function EditFlyerPage() {
         setRealtorId(flyer.realtorId);
         setScenarios((flyer.loanScenarios as Partial<LoanScenario>[]) || []);
         setQrUrl(flyer.qrCodeData || "");
+        setDistributionState(flyer.distributionState || "");
         if (realtorsRes.ok) setRealtors(await realtorsRes.json());
       } catch {
         toast.error("Failed to load flyer");
@@ -126,7 +139,7 @@ export default function EditFlyerPage() {
     if (prevIdx >= 0) setStep(visibleSteps[prevIdx]);
   };
 
-  const handleSave = async (status: "DRAFT" | "SAVED") => {
+  const handleSave = async (status: "DRAFT" | "SAVED", { redirect = true } = {}) => {
     setIsSaving(true);
     try {
       const res = await fetch(`/api/flyers/${id}`, {
@@ -136,11 +149,13 @@ export default function EditFlyerPage() {
           templateId, propertyData, realtorId,
           loanScenarios: hasFinancing ? scenarios : [],
           qrCodeData: qrUrl || null, status,
+          distributionState: distributionState || null,
           title: propertyData.address ? `${propertyData.address}, ${propertyData.city}` : null,
         }),
       });
       if (!res.ok) throw new Error();
       toast.success(status === "SAVED" ? "Flyer saved!" : "Draft saved");
+      if (status === "SAVED" && redirect) router.push(`/dashboard/flyers/${id}/preview`);
     } catch {
       toast.error("Failed to save");
     } finally {
@@ -149,7 +164,7 @@ export default function EditFlyerPage() {
   };
 
   const handleDownloadPDF = async () => {
-    await handleSave("SAVED");
+    await handleSave("SAVED", { redirect: false });
     try {
       const res = await fetch(`/api/flyers/${id}/pdf`, { method: "POST" });
       if (!res.ok) throw new Error();
@@ -518,8 +533,8 @@ export default function EditFlyerPage() {
     4: (
       <div className="space-y-6">
         <div>
-          <h2 className="text-lg font-bold text-slate-900 mb-1">Preview & save</h2>
-          <p className="text-sm text-slate-500">Review your flyer and save or download.</p>
+          <h2 className="text-lg font-bold text-slate-900 mb-1">Additional Details</h2>
+          <p className="text-sm text-slate-500">Add a QR code, then save or download your flyer.</p>
         </div>
         <div className="bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-3">
           <div className="grid grid-cols-2 gap-3 text-sm">
@@ -528,6 +543,28 @@ export default function EditFlyerPage() {
             <div><span className="text-slate-400 text-xs">Price</span><p className="font-medium text-slate-900">{propertyData.price ? formatCurrency(propertyData.price) : "—"}</p></div>
             <div><span className="text-slate-400 text-xs">Photos</span><p className="font-medium text-slate-900">{(propertyData.photos || []).length}</p></div>
           </div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <h3 className="text-sm font-semibold text-slate-700">
+              State of Distribution <span className="text-red-500">*</span>
+            </h3>
+          </div>
+          <p className="text-xs text-slate-500 mb-3">
+            Select the state where this flyer will be distributed. Required for compliance records.
+          </p>
+          <Select value={distributionState} onValueChange={setDistributionState}>
+            <SelectTrigger className="h-9">
+              <SelectValue placeholder="Select a state…" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              {US_STATES.map((s) => (
+                <SelectItem key={s.abbr} value={s.abbr}>
+                  {s.name} ({s.abbr})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-5">
           <div className="flex items-center gap-2 mb-3">
@@ -560,7 +597,7 @@ export default function EditFlyerPage() {
         <h1 className="text-2xl font-bold text-slate-900">Edit Flyer</h1>
         <p className="text-sm text-slate-500 mt-1">Update your flyer details.</p>
       </div>
-      <StepIndicator currentStep={currentVisibleStep} />
+      <StepIndicator currentStep={currentVisibleStep} steps={steps} />
       <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">{content}</div>
       {step !== visibleSteps[visibleSteps.length - 1] && (
         <div className="flex justify-between">

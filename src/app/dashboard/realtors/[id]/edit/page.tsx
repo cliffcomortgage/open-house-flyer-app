@@ -169,11 +169,11 @@ export default function EditRealtorPage() {
           cellPhone: data.cellPhone || "",
           email: data.email || "",
           website: data.website || "",
-          officeStreet: data.officeAddress || "",
-          officeSuite: "",
-          officeCity: "",
-          officeState: "",
-          officeZip: "",
+          officeStreet: data.officeStreet || "",
+          officeSuite: data.officeSuite || "",
+          officeCity: data.officeCity || "",
+          officeState: data.officeState || "",
+          officeZip: data.officeZip || "",
           brandPrimary: data.brandPrimary || "",
           brandSecondary: data.brandSecondary || "",
         });
@@ -218,20 +218,11 @@ export default function EditRealtorPage() {
   const onSubmit = async (data: RealtorForm) => {
     setIsSubmitting(true);
     try {
-      const addrParts: string[] = [];
-      if (data.officeStreet?.trim()) addrParts.push(data.officeStreet.trim());
-      if (data.officeSuite?.trim()) addrParts.push(`Suite ${data.officeSuite.trim()}`);
-      if (data.officeCity?.trim()) addrParts.push(data.officeCity.trim());
-      const stateZip = [data.officeState?.trim(), data.officeZip?.trim()].filter(Boolean).join(" ");
-      if (stateZip) addrParts.push(stateZip);
-      const officeAddress = addrParts.join(", ") || undefined;
-
       const res = await fetch(`/api/realtors/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
-          officeAddress,
           headshotUrl,
           companyLogoUrl,
         }),

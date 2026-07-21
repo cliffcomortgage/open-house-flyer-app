@@ -39,6 +39,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { cn, formatCurrency } from "@/lib/utils";
 import { FLYER_TEMPLATES } from "@/types";
+import { US_STATES } from "@/lib/us-states";
 import type {
   Realtor,
   PropertyData,
@@ -47,12 +48,10 @@ import type {
   OptimalBlueProduct,
 } from "@/types";
 
-const STEPS = ["Template", "Property", "Realtor", "Financing", "Preview"];
-
-function StepIndicator({ currentStep }: { currentStep: number }) {
+function StepIndicator({ currentStep, steps }: { currentStep: number; steps: string[] }) {
   return (
     <div className="flex items-center gap-0 mb-8">
-      {STEPS.map((label, idx) => (
+      {steps.map((label, idx) => (
         <div key={idx} className="flex items-center">
           <div
             className={cn(
@@ -78,7 +77,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             </span>
             {label}
           </div>
-          {idx < STEPS.length - 1 && (
+          {idx < steps.length - 1 && (
             <div className={cn("w-6 h-px mx-1", idx < currentStep ? "bg-emerald-300" : "bg-slate-200")} />
           )}
         </div>
@@ -781,6 +780,8 @@ function PreviewStep({
   propertyData,
   qrUrl,
   setQrUrl,
+  distributionState,
+  setDistributionState,
   onSave,
   isSaving,
 }: {
@@ -788,6 +789,8 @@ function PreviewStep({
   propertyData: Partial<PropertyData>;
   qrUrl: string;
   setQrUrl: (v: string) => void;
+  distributionState: string;
+  setDistributionState: (v: string) => void;
   onSave: (status: "DRAFT" | "SAVED") => void;
   isSaving: boolean;
 }) {
@@ -801,8 +804,8 @@ function PreviewStep({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-bold text-slate-900 mb-1">Preview & save</h2>
-        <p className="text-sm text-slate-500">Review your flyer details before saving.</p>
+        <h2 className="text-lg font-bold text-slate-900 mb-1">Additional Details</h2>
+        <p className="text-sm text-slate-500">Add a QR code and review your flyer details before saving.</p>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
@@ -829,6 +832,30 @@ function PreviewStep({
             <p className="font-medium text-slate-900">{(propertyData.photos || []).length} photo{(propertyData.photos || []).length !== 1 ? "s" : ""}</p>
           </div>
         </div>
+      </div>
+
+      {/* Distribution state — required */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-sm font-semibold text-slate-700">
+            State of Distribution <span className="text-red-500">*</span>
+          </h3>
+        </div>
+        <p className="text-xs text-slate-500 mb-3">
+          Select the state where this flyer will be distributed. Required for compliance records.
+        </p>
+        <Select value={distributionState} onValueChange={setDistributionState}>
+          <SelectTrigger className="h-9">
+            <SelectValue placeholder="Select a state…" />
+          </SelectTrigger>
+          <SelectContent className="max-h-72">
+            {US_STATES.map((s) => (
+              <SelectItem key={s.abbr} value={s.abbr}>
+                {s.name} ({s.abbr})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* QR code */}
@@ -884,21 +911,28 @@ export default function NewFlyerPage() {
   const [realtorId, setRealtorId] = useState<string | null>(null);
   const [scenarios, setScenarios] = useState<Partial<LoanScenario>[]>([]);
   const [qrUrl, setQrUrl] = useState("");
+  const [distributionState, setDistributionState] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const selectedTemplate = FLYER_TEMPLATES.find((t) => t.id === templateId)!;
   const hasFinancing = selectedTemplate?.hasLoanScenarios;
 
+  const steps = hasFinancing
+    ? ["Template", "Property", "Realtor", "Financing", "Additional Details"]
+    : ["Template", "Property", "Realtor", "Additional Details"];
+
   // Steps depend on whether template needs financing
   const visibleSteps = hasFinancing ? [0, 1, 2, 3, 4] : [0, 1, 2, 4];
-  const stepCount = visibleSteps.length;
   const currentVisibleStep = visibleSteps.indexOf(step);
 
   const canAdvance = () => {
     if (step === 0) return !!templateId;
     if (step === 1) return !!(propertyData.address && propertyData.city);
+    // Additional Details step: require distributionState before saving
     return true;
   };
+
+  const canSave = () => !!distributionState;
 
   const advance = () => {
     const nextIdx = currentVisibleStep + 1;
@@ -923,6 +957,7 @@ export default function NewFlyerPage() {
           loanScenarios: hasFinancing ? scenarios : [],
           qrCodeData: qrUrl || null,
           status,
+          distributionState: distributionState || null,
           title: propertyData.address
             ? `${propertyData.address}, ${propertyData.city}`
             : null,
@@ -931,7 +966,11 @@ export default function NewFlyerPage() {
       if (!res.ok) throw new Error();
       const flyer = await res.json();
       toast.success(status === "SAVED" ? "Flyer saved!" : "Draft saved");
-      router.push(`/dashboard/flyers/${flyer.id}/edit`);
+      if (status === "SAVED") {
+        router.push(`/dashboard/flyers/${flyer.id}/preview`);
+      } else {
+        router.push(`/dashboard/flyers/${flyer.id}/edit`);
+      }
     } catch {
       toast.error("Failed to save flyer");
     } finally {
@@ -964,7 +1003,15 @@ export default function NewFlyerPage() {
       propertyData={propertyData}
       qrUrl={qrUrl}
       setQrUrl={setQrUrl}
-      onSave={handleSave}
+      distributionState={distributionState}
+      setDistributionState={setDistributionState}
+      onSave={(status) => {
+        if (!distributionState) {
+          toast.error("Please select a state of distribution");
+          return;
+        }
+        handleSave(status);
+      }}
       isSaving={isSaving}
     />,
   ];
@@ -987,7 +1034,7 @@ export default function NewFlyerPage() {
         <p className="text-sm text-slate-500 mt-1">Follow the steps to build your open house flyer.</p>
       </div>
 
-      <StepIndicator currentStep={currentVisibleStep} />
+      <StepIndicator currentStep={currentVisibleStep} steps={steps} />
 
       <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
         {currentComponent}

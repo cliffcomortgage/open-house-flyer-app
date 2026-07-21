@@ -10,6 +10,7 @@ import { Upload, X, Loader2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn, isLightColor } from "@/lib/utils";
 import type { CompanySettings } from "@/types";
@@ -20,13 +21,86 @@ const settingsSchema = z.object({
   phone: z.string().optional(),
   primaryColor: z.string().min(4, "Required"),
   secondaryColor: z.string().min(4, "Required"),
+  licenseText: z.string().optional(),
 });
 
 type SettingsForm = z.infer<typeof settingsSchema>;
 
+function LogoDropzone({
+  logoUrl,
+  onClear,
+  uploading,
+  isDragActive,
+  getRootProps,
+  getInputProps,
+  label,
+  hint,
+  previewBg,
+}: {
+  logoUrl: string | null;
+  onClear: () => void;
+  uploading: boolean;
+  isDragActive: boolean;
+  getRootProps: () => object;
+  getInputProps: () => object;
+  label: string;
+  hint: string;
+  previewBg: string;
+}) {
+  return (
+    <div>
+      <p className="text-xs font-medium text-slate-600 mb-2">{label}</p>
+      {logoUrl ? (
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div
+              className="h-16 rounded-lg p-2 border border-slate-200 flex items-center"
+              style={{ backgroundColor: previewBg }}
+            >
+              <img src={logoUrl} alt={label} className="h-full object-contain max-w-[120px]" />
+            </div>
+            <button
+              type="button"
+              onClick={onClear}
+              className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+          <p className="text-xs text-slate-500">Click × to remove and upload a new logo.</p>
+        </div>
+      ) : (
+        <div
+          {...getRootProps()}
+          className={cn(
+            "border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-colors",
+            isDragActive ? "border-blue-400 bg-blue-50" : "border-slate-200 hover:border-slate-300"
+          )}
+          style={{ backgroundColor: previewBg !== "#ffffff" ? previewBg + "22" : undefined }}
+        >
+          <input {...getInputProps()} />
+          {uploading ? (
+            <Loader2 className="w-5 h-5 animate-spin mx-auto text-blue-500" />
+          ) : (
+            <>
+              <Upload className="w-5 h-5 mx-auto text-slate-400 mb-2" />
+              <p className="text-xs text-slate-500">
+                {isDragActive ? "Drop here" : "Drag & drop or click to upload"}
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">{hint}</p>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminSettingsPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoUrlLight, setLogoUrlLight] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadingLight, setUploadingLight] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -54,8 +128,10 @@ export default function AdminSettingsPage() {
           phone: data.phone || "",
           primaryColor: data.primaryColor,
           secondaryColor: data.secondaryColor,
+          licenseText: data.licenseText || "",
         });
         setLogoUrl(data.logoUrl);
+        setLogoUrlLight(data.logoUrlLight);
       } catch {
         toast.error("Failed to load company settings");
       } finally {
@@ -65,10 +141,8 @@ export default function AdminSettingsPage() {
     load();
   }, [reset]);
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (!file) return;
-    setUploading(true);
+  const uploadFile = async (file: File, setter: (url: string) => void, setLoading: (v: boolean) => void) => {
+    setLoading(true);
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -76,17 +150,36 @@ export default function AdminSettingsPage() {
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       if (!res.ok) throw new Error();
       const { publicUrl } = await res.json();
-      setLogoUrl(publicUrl);
+      setter(publicUrl);
       toast.success("Logo uploaded");
     } catch {
       toast.error("Upload failed");
     } finally {
-      setUploading(false);
+      setLoading(false);
     }
+  };
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+    await uploadFile(file, setLogoUrl, setUploading);
+  }, []);
+
+  const onDropLight = useCallback(async (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+    await uploadFile(file, setLogoUrlLight, setUploadingLight);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    accept: { "image/*": [".jpg", ".jpeg", ".png", ".webp", ".svg"] },
+    maxFiles: 1,
+    maxSize: 5 * 1024 * 1024,
+  });
+
+  const { getRootProps: getRootPropsLight, getInputProps: getInputPropsLight, isDragActive: isDragActiveLight } = useDropzone({
+    onDrop: onDropLight,
     accept: { "image/*": [".jpg", ".jpeg", ".png", ".webp", ".svg"] },
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024,
@@ -98,7 +191,7 @@ export default function AdminSettingsPage() {
       const res = await fetch("/api/admin/company", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, logoUrl }),
+        body: JSON.stringify({ ...data, logoUrl, logoUrlLight, licenseText: data.licenseText || null }),
       });
       if (!res.ok) throw new Error();
       toast.success("Settings saved");
@@ -165,51 +258,51 @@ export default function AdminSettingsPage() {
                 {errors.website && <p className="text-red-500 text-xs mt-1">{errors.website.message}</p>}
               </div>
             </div>
+            <div>
+              <Label htmlFor="licenseText" className="text-sm font-medium text-slate-700 mb-1.5 block">
+                State licensing statement
+              </Label>
+              <Textarea
+                id="licenseText"
+                className="text-sm resize-none"
+                rows={2}
+                placeholder="e.g. Licensed Mortgage Banker NYS Dept. of Financial Services"
+                {...register("licenseText")}
+              />
+              <p className="text-xs text-slate-400 mt-1">Appears in the footer of all flyers next to Branch NMLS#</p>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Logo */}
+        {/* Logos */}
         <Card className="border-slate-200">
           <CardHeader className="pb-3 border-b border-slate-100">
-            <CardTitle className="text-sm font-semibold text-slate-700">Company Logo</CardTitle>
+            <CardTitle className="text-sm font-semibold text-slate-700">Company Logos</CardTitle>
           </CardHeader>
-          <CardContent className="p-5">
-            {logoUrl ? (
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <img src={logoUrl} alt="Logo" className="h-16 object-contain border border-slate-200 rounded-lg p-2 bg-white" />
-                  <button
-                    type="button"
-                    onClick={() => setLogoUrl(null)}
-                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-                <p className="text-xs text-slate-500">Click × to remove and upload a new logo.</p>
-              </div>
-            ) : (
-              <div
-                {...getRootProps()}
-                className={cn(
-                  "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors",
-                  isDragActive ? "border-blue-400 bg-blue-50" : "border-slate-200 hover:border-slate-300"
-                )}
-              >
-                <input {...getInputProps()} />
-                {uploading ? (
-                  <Loader2 className="w-5 h-5 animate-spin mx-auto text-blue-500" />
-                ) : (
-                  <>
-                    <Upload className="w-5 h-5 mx-auto text-slate-400 mb-2" />
-                    <p className="text-xs text-slate-500">
-                      {isDragActive ? "Drop here" : "Drag & drop or click to upload"}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-0.5">PNG, SVG, JPG · Max 5MB · Transparent background preferred</p>
-                  </>
-                )}
-              </div>
-            )}
+          <CardContent className="p-5 space-y-5">
+            <LogoDropzone
+              logoUrl={logoUrl}
+              onClear={() => setLogoUrl(null)}
+              uploading={uploading}
+              isDragActive={isDragActive}
+              getRootProps={getRootProps}
+              getInputProps={getInputProps}
+              label="Logo (Dark) — for light backgrounds"
+              hint="PNG, SVG, JPG · Max 5MB · Transparent background preferred"
+              previewBg="#ffffff"
+            />
+            <div className="border-t border-slate-100" />
+            <LogoDropzone
+              logoUrl={logoUrlLight}
+              onClear={() => setLogoUrlLight(null)}
+              uploading={uploadingLight}
+              isDragActive={isDragActiveLight}
+              getRootProps={getRootPropsLight}
+              getInputProps={getInputPropsLight}
+              label="Logo (White/Light) — for dark backgrounds"
+              hint="PNG, SVG · Max 5MB · White or light version of your logo"
+              previewBg="#1e1e2e"
+            />
           </CardContent>
         </Card>
 

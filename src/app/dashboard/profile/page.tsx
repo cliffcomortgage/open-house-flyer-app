@@ -23,8 +23,12 @@ const profileSchema = z.object({
   officePhone: z.string().optional(),
   cellPhone: z.string().optional(),
   email: z.string().email("Invalid email"),
-  website: z.string().url("Invalid URL").optional().or(z.literal("")),
-  branchAddress: z.string().optional(),
+  website: z.string().optional().or(z.literal("")),
+  branchStreet: z.string().optional(),
+  branchSuite: z.string().optional(),
+  branchCity: z.string().optional(),
+  branchState: z.string().optional(),
+  branchZip: z.string().optional(),
   branchNmls: z.string().optional(),
   disclaimer: z.string().optional(),
 });
@@ -61,7 +65,11 @@ export default function ProfilePage() {
           cellPhone: lo.cellPhone || "",
           email: lo.email,
           website: lo.website || "",
-          branchAddress: lo.branchAddress || "",
+          branchStreet: lo.branchStreet || "",
+          branchSuite: lo.branchSuite || "",
+          branchCity: lo.branchCity || "",
+          branchState: lo.branchState || "",
+          branchZip: lo.branchZip || "",
           branchNmls: lo.branchNmls || "",
           disclaimer: lo.disclaimer || "",
         });
@@ -231,7 +239,7 @@ export default function ProfilePage() {
               {fieldEl("cellPhone", "Cell phone")}
               {fieldEl("officePhone", "Office phone")}
             </div>
-            {fieldEl("website", "Website", "url", "https://...")}
+            {fieldEl("website", "Website", "text", "cliffcomortgage.com")}
           </CardContent>
         </Card>
 
@@ -241,7 +249,20 @@ export default function ProfilePage() {
             <CardTitle className="text-sm font-semibold text-slate-700">Branch Information</CardTitle>
           </CardHeader>
           <CardContent className="p-5 space-y-4">
-            {fieldEl("branchAddress", "Branch address")}
+            <div>
+              <Label className="text-sm font-medium text-slate-700 mb-1.5 block">Branch address</Label>
+              <div className="space-y-2">
+                <Input className="h-9" placeholder="Street address" {...register("branchStreet")} />
+                <div className="grid grid-cols-3 gap-2">
+                  <Input className="h-9" placeholder="Suite #" {...register("branchSuite")} />
+                  <Input className="h-9 col-span-2" placeholder="City" {...register("branchCity")} />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Input className="h-9" placeholder="State" {...register("branchState")} />
+                  <Input className="h-9 col-span-2" placeholder="ZIP" {...register("branchZip")} />
+                </div>
+              </div>
+            </div>
             {fieldEl("branchNmls", "Branch NMLS#")}
           </CardContent>
         </Card>

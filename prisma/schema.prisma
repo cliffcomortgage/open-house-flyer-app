@@ -36,8 +36,10 @@ model Company {
   primaryColor   String   @default("#003366")
   secondaryColor String   @default("#C9A84C")
   logoUrl        String?
+  logoUrlLight   String?
   website        String?
   phone          String?
+  licenseText    String?   @db.Text
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -55,6 +57,11 @@ model LoanOfficer {
   email         String
   website       String?
   branchAddress String?
+  branchStreet  String?
+  branchSuite   String?
+  branchCity    String?
+  branchState   String?
+  branchZip     String?
   branchNmls    String?
   disclaimer    String?   @db.Text
   headshotUrl   String?
@@ -77,6 +84,11 @@ model Realtor {
   email           String?
   website         String?
   officeAddress   String?
+  officeStreet    String?
+  officeSuite     String?
+  officeCity      String?
+  officeState     String?
+  officeZip       String?
   headshotUrl     String?
   companyLogoUrl  String?
   brandPrimary    String?
@@ -96,12 +108,13 @@ model Flyer {
   title         String?
   propertyData  Json?
   loanScenarios Json?
-  qrCodeData    String?
-  pdfUrl        String?
-  shareToken    String?     @unique
-  status        FlyerStatus @default(DRAFT)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  qrCodeData         String?
+  pdfUrl             String?
+  shareToken         String?     @unique
+  status             FlyerStatus @default(DRAFT)
+  distributionState  String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 }
 
 model Account {

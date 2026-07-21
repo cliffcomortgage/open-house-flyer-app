@@ -125,11 +125,11 @@ export default function EditLoanOfficerPage() {
           officePhone: lo.officePhone || "",
           cellPhone: lo.cellPhone || "",
           website: lo.website || "",
-          branchStreet: lo.branchAddress || "",
-          branchSuite: "",
-          branchCity: "",
-          branchState: "",
-          branchZip: "",
+          branchStreet: lo.branchStreet || "",
+          branchSuite: lo.branchSuite || "",
+          branchCity: lo.branchCity || "",
+          branchState: lo.branchState || "",
+          branchZip: lo.branchZip || "",
           branchNmls: lo.branchNmls || "",
           disclaimer: lo.disclaimer || "",
           isActive: lo.user.isActive,
@@ -148,18 +148,10 @@ export default function EditLoanOfficerPage() {
   const onSubmit = async (data: EditLOForm) => {
     setIsSaving(true);
     try {
-      const addrParts: string[] = [];
-      if (data.branchStreet?.trim()) addrParts.push(data.branchStreet.trim());
-      if (data.branchSuite?.trim()) addrParts.push(`Suite ${data.branchSuite.trim()}`);
-      if (data.branchCity?.trim()) addrParts.push(data.branchCity.trim());
-      const stateZip = [data.branchState?.trim(), data.branchZip?.trim()].filter(Boolean).join(" ");
-      if (stateZip) addrParts.push(stateZip);
-      const branchAddress = addrParts.join(", ") || undefined;
-
       const res = await fetch(`/api/admin/loan-officers/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, branchAddress, headshotUrl }),
+        body: JSON.stringify({ ...data, headshotUrl }),
       });
       if (!res.ok) throw new Error();
       toast.success("Loan officer updated");
@@ -263,14 +255,19 @@ export default function EditLoanOfficerPage() {
             <CardTitle className="text-sm font-semibold text-slate-700">Branch Information</CardTitle>
           </CardHeader>
           <CardContent className="p-5 space-y-4">
-            {fieldEl("branchStreet", "Street address")}
-            <div className="grid grid-cols-3 gap-3">
-              {fieldEl("branchSuite", "Suite #")}
-              <div className="col-span-2">{fieldEl("branchCity", "City")}</div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              {fieldEl("branchState", "State")}
-              <div className="col-span-2">{fieldEl("branchZip", "ZIP")}</div>
+            <div>
+              <Label className="text-sm font-medium text-slate-700 mb-1.5 block">Branch address</Label>
+              <div className="space-y-2">
+                <Input className="h-9" placeholder="Street address" {...register("branchStreet")} />
+                <div className="grid grid-cols-3 gap-2">
+                  <Input className="h-9" placeholder="Suite #" {...register("branchSuite")} />
+                  <Input className="h-9 col-span-2" placeholder="City" {...register("branchCity")} />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Input className="h-9" placeholder="State" {...register("branchState")} />
+                  <Input className="h-9 col-span-2" placeholder="ZIP" {...register("branchZip")} />
+                </div>
+              </div>
             </div>
             {fieldEl("branchNmls", "Branch NMLS#")}
           </CardContent>

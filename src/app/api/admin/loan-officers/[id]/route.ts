@@ -9,6 +9,16 @@ async function requireAdmin() {
   return session;
 }
 
+function assembleBranchAddress(street?: string, suite?: string, city?: string, state?: string, zip?: string): string | null {
+  const parts: string[] = [];
+  if (street?.trim()) parts.push(street.trim());
+  if (suite?.trim()) parts.push(`Suite ${suite.trim()}`);
+  if (city?.trim()) parts.push(city.trim());
+  const stateZip = [state?.trim(), zip?.trim()].filter(Boolean).join(" ");
+  if (stateZip) parts.push(stateZip);
+  return parts.join(", ") || null;
+}
+
 export async function GET(
   _req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -43,9 +53,12 @@ export async function PUT(
   const body = await req.json();
   const {
     firstName, lastName, title, nmlsNumber, email,
-    officePhone, cellPhone, website, branchAddress, branchNmls, disclaimer,
-    headshotUrl, isActive,
+    officePhone, cellPhone, website,
+    branchStreet, branchSuite, branchCity, branchState, branchZip,
+    branchNmls, disclaimer, headshotUrl, isActive,
   } = body;
+
+  const branchAddress = assembleBranchAddress(branchStreet, branchSuite, branchCity, branchState, branchZip);
 
   const [updated] = await prisma.$transaction([
     prisma.loanOfficer.update({
@@ -59,7 +72,12 @@ export async function PUT(
         officePhone: officePhone !== undefined ? (officePhone || null) : lo.officePhone,
         cellPhone: cellPhone !== undefined ? (cellPhone || null) : lo.cellPhone,
         website: website !== undefined ? (website || null) : lo.website,
-        branchAddress: branchAddress !== undefined ? (branchAddress || null) : lo.branchAddress,
+        branchAddress: branchAddress !== null ? branchAddress : lo.branchAddress,
+        branchStreet: branchStreet !== undefined ? (branchStreet || null) : lo.branchStreet,
+        branchSuite: branchSuite !== undefined ? (branchSuite || null) : lo.branchSuite,
+        branchCity: branchCity !== undefined ? (branchCity || null) : lo.branchCity,
+        branchState: branchState !== undefined ? (branchState || null) : lo.branchState,
+        branchZip: branchZip !== undefined ? (branchZip || null) : lo.branchZip,
         branchNmls: branchNmls !== undefined ? (branchNmls || null) : lo.branchNmls,
         disclaimer: disclaimer !== undefined ? (disclaimer || null) : lo.disclaimer,
         headshotUrl: headshotUrl !== undefined ? (headshotUrl || null) : lo.headshotUrl,
@@ -90,7 +108,6 @@ export async function DELETE(
   const lo = await prisma.loanOfficer.findUnique({ where: { id } });
   if (!lo) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Cascade: deleting the user will delete the LoanOfficer due to onDelete: Cascade
   await prisma.user.delete({ where: { id: lo.userId } });
 
   return NextResponse.json({ success: true });

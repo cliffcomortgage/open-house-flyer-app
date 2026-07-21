@@ -171,20 +171,11 @@ export default function NewRealtorPage() {
   const onSubmit = async (data: RealtorForm) => {
     setIsSubmitting(true);
     try {
-      const addrParts: string[] = [];
-      if (data.officeStreet?.trim()) addrParts.push(data.officeStreet.trim());
-      if (data.officeSuite?.trim()) addrParts.push(`Suite ${data.officeSuite.trim()}`);
-      if (data.officeCity?.trim()) addrParts.push(data.officeCity.trim());
-      const stateZip = [data.officeState?.trim(), data.officeZip?.trim()].filter(Boolean).join(" ");
-      if (stateZip) addrParts.push(stateZip);
-      const officeAddress = addrParts.join(", ") || undefined;
-
       const res = await fetch("/api/realtors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
-          officeAddress,
           headshotUrl,
           companyLogoUrl,
         }),

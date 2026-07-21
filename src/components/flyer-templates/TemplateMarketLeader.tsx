@@ -14,112 +14,133 @@ interface TemplateMarketLeaderProps {
 function ScenarioColumn({
   scenario,
   primaryColor,
-  index,
 }: {
   scenario: LoanScenario;
   primaryColor: string;
-  index: number;
 }) {
-  const headerBg = index === 0 ? primaryColor : index === 1 ? `${primaryColor}cc` : `${primaryColor}99`;
+  const rows = [
+    scenario.downPaymentPercent !== undefined
+      ? { label: "Down", value: `${scenario.downPaymentPercent}%` }
+      : null,
+    scenario.loanAmount
+      ? { label: "Loan Amt", value: formatCurrency(scenario.loanAmount) }
+      : null,
+    scenario.piPayment
+      ? { label: "P&I", value: `${formatCurrency(scenario.piPayment)}/mo` }
+      : null,
+    scenario.taxesInsurance
+      ? { label: "Tax+Ins", value: `${formatCurrency(scenario.taxesInsurance)}/mo` }
+      : null,
+    scenario.miPayment
+      ? { label: "MI", value: `${formatCurrency(scenario.miPayment)}/mo` }
+      : null,
+    scenario.hoaFee
+      ? { label: "HOA", value: `${formatCurrency(scenario.hoaFee)}/mo` }
+      : null,
+  ].filter(Boolean);
 
   return (
     <div
       style={{
         flex: 1,
-        border: "1px solid #e5e7eb",
-        borderRadius: "10px",
+        border: "1px solid #e2e8f0",
         overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      {/* Header */}
+      {/* Label header */}
       <div
         style={{
-          background: headerBg,
-          padding: "12px 14px",
-          textAlign: "center",
+          borderBottom: `2px solid ${primaryColor}`,
+          padding: "9px 12px",
+          background: "#fafafa",
         }}
       >
-        <div style={{ color: "#ffffff", fontWeight: 800, fontSize: "13px", lineHeight: 1.2 }}>
-          {scenario.label || `${scenario.term}yr ${scenario.loanType}`}
+        <div
+          style={{
+            fontSize: "9px",
+            fontWeight: 700,
+            color: primaryColor,
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+          }}
+        >
+          {scenario.label ||
+            [scenario.term && `${scenario.term}yr`, scenario.loanType]
+              .filter(Boolean)
+              .join(" ")}
         </div>
-        {scenario.loanType && scenario.loanType !== scenario.label && (
-          <div style={{ color: "rgba(255,255,255,0.8)", fontSize: "10px", marginTop: "2px" }}>
-            {scenario.loanType}
-          </div>
-        )}
       </div>
 
-      {/* Rate highlight */}
+      {/* Rate */}
       {scenario.interestRate && (
         <div
           style={{
             textAlign: "center",
-            padding: "12px 8px",
+            padding: "13px 8px 10px",
             borderBottom: "1px solid #f1f5f9",
-            background: "#fafafa",
           }}
         >
-          <div style={{ fontSize: "28px", fontWeight: 800, color: "#1e293b" }}>
+          <div
+            style={{
+              fontSize: "36px",
+              fontWeight: 900,
+              color: "#0f172a",
+              lineHeight: 1,
+              letterSpacing: "-1.5px",
+            }}
+          >
             {formatRate(scenario.interestRate)}
           </div>
           {scenario.apr && (
-            <div style={{ fontSize: "10px", color: "#64748b" }}>
+            <div
+              style={{ fontSize: "9px", color: "#94a3b8", marginTop: "4px", letterSpacing: "0.04em" }}
+            >
               APR {formatRate(scenario.apr)}
             </div>
           )}
         </div>
       )}
 
-      {/* Breakdown table */}
-      <div style={{ padding: "10px 14px" }}>
-        {scenario.downPaymentPercent !== undefined && (
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "10.5px" }}>
-            <span style={{ color: "#64748b" }}>Down</span>
-            <span style={{ fontWeight: 600, color: "#1e293b" }}>{scenario.downPaymentPercent}%</span>
+      {/* Breakdown rows */}
+      <div style={{ padding: "9px 12px", flex: 1 }}>
+        {rows.map((row, idx) => (
+          <div
+            key={idx}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              padding: "4px 0",
+              fontSize: "10px",
+              borderTop: idx > 0 ? "1px solid #f8fafc" : "none",
+            }}
+          >
+            <span style={{ color: "#64748b" }}>{row!.label}</span>
+            <span style={{ fontWeight: 600, color: "#1e293b" }}>{row!.value}</span>
           </div>
-        )}
-        {scenario.loanAmount && (
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "10.5px", borderTop: "1px solid #f8fafc" }}>
-            <span style={{ color: "#64748b" }}>Loan Amt</span>
-            <span style={{ fontWeight: 600, color: "#1e293b" }}>{formatCurrency(scenario.loanAmount)}</span>
-          </div>
-        )}
-        {scenario.piPayment && (
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "10.5px", borderTop: "1px solid #f8fafc" }}>
-            <span style={{ color: "#64748b" }}>P&I</span>
-            <span style={{ fontWeight: 600, color: "#1e293b" }}>{formatCurrency(scenario.piPayment)}/mo</span>
-          </div>
-        )}
-        {scenario.taxesInsurance && (
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "10.5px", borderTop: "1px solid #f8fafc" }}>
-            <span style={{ color: "#64748b" }}>Tax+Ins</span>
-            <span style={{ fontWeight: 600, color: "#1e293b" }}>{formatCurrency(scenario.taxesInsurance)}/mo</span>
-          </div>
-        )}
-        {scenario.miPayment && (
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "10.5px", borderTop: "1px solid #f8fafc" }}>
-            <span style={{ color: "#64748b" }}>MI</span>
-            <span style={{ fontWeight: 600, color: "#1e293b" }}>{formatCurrency(scenario.miPayment)}/mo</span>
-          </div>
-        )}
-        {scenario.hoaFee && (
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: "10.5px", borderTop: "1px solid #f8fafc" }}>
-            <span style={{ color: "#64748b" }}>HOA</span>
-            <span style={{ fontWeight: 600, color: "#1e293b" }}>{formatCurrency(scenario.hoaFee)}/mo</span>
-          </div>
-        )}
+        ))}
+
         {scenario.monthlyPayment && (
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              padding: "7px 0 4px",
-              borderTop: "2px solid #e5e7eb",
-              marginTop: "4px",
+              alignItems: "center",
+              padding: "7px 0 2px",
+              borderTop: "1px solid #e2e8f0",
+              marginTop: "5px",
             }}
           >
-            <span style={{ fontSize: "11px", fontWeight: 700, color: "#1e293b" }}>Total/mo</span>
-            <span style={{ fontSize: "13px", fontWeight: 800, color: primaryColor }}>
+            <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#0f172a" }}>Total/mo</span>
+            <span
+              style={{
+                fontSize: "15px",
+                fontWeight: 900,
+                color: primaryColor,
+                letterSpacing: "-0.5px",
+              }}
+            >
               {formatCurrency(scenario.monthlyPayment)}
             </span>
           </div>
@@ -138,180 +159,301 @@ export function TemplateMarketLeader({
   loanScenarios,
 }: TemplateMarketLeaderProps) {
   const primaryColor = realtor?.brandPrimary || company.primaryColor || "#6633cc";
-  const secondaryColor = realtor?.brandSecondary || company.secondaryColor || "#0d0d0d";
   const photos = propertyData.photos || [];
   const scenarios = (loanScenarios || []).slice(0, 3);
+
+  const formattedDate = propertyData.openHouseDate
+    ? new Date(propertyData.openHouseDate).toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      })
+    : null;
+
+  const timeStr = [propertyData.openHouseStartTime, propertyData.openHouseEndTime]
+    .filter(Boolean)
+    .join(" – ");
+
+  const stats = [
+    propertyData.bedrooms ? { label: "Beds", value: propertyData.bedrooms } : null,
+    propertyData.bathrooms ? { label: "Baths", value: propertyData.bathrooms } : null,
+    propertyData.squareFeet
+      ? { label: "Sq Ft", value: propertyData.squareFeet.toLocaleString() }
+      : null,
+    propertyData.yearBuilt ? { label: "Built", value: propertyData.yearBuilt } : null,
+    propertyData.garage ? { label: "Garage", value: propertyData.garage } : null,
+  ].filter(Boolean);
 
   return (
     <div
       style={{
         width: "816px",
-        minHeight: "1056px",
+        height: "1056px",
         display: "flex",
         flexDirection: "column",
         background: "#ffffff",
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+        fontFamily: "Arial, 'Helvetica Neue', Helvetica, sans-serif",
         overflow: "hidden",
       }}
     >
-      {/* Photo strip — 3 photos side by side */}
-      <div style={{ display: "flex", height: "280px", flexShrink: 0, gap: "3px" }}>
-        {[0, 1, 2].map((idx) => (
-          <div
-            key={idx}
-            style={{
-              flex: 1,
-              overflow: "hidden",
-              background: `${primaryColor}${idx === 0 ? "" : idx === 1 ? "cc" : "88"}`,
-            }}
-          >
-            {photos[idx] ? (
-              <img
-                src={photos[idx]}
-                alt={`Property ${idx + 1}`}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-            ) : (
+      {/* Brand accent bar */}
+      <div style={{ height: "3px", background: primaryColor, flexShrink: 0 }} />
+
+      {/* Editorial header — white, generous padding */}
+      <div style={{ padding: "18px 36px 0", flexShrink: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: "13px",
+                fontWeight: 700,
+                color: primaryColor,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+              }}
+            >
+              Open House
+            </div>
+            {(formattedDate || propertyData.city) && (
               <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  background: `${primaryColor}${idx === 0 ? "ff" : idx === 1 ? "bb" : "77"}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+                style={{ fontSize: "13px", color: "#475569", marginTop: "4px", fontWeight: 400 }}
               >
-                <span style={{ fontSize: "40px", opacity: 0.3 }}>🏡</span>
+                {formattedDate ||
+                  [propertyData.city, propertyData.state].filter(Boolean).join(", ")}
+                {formattedDate && timeStr && (
+                  <span style={{ color: "#94a3b8" }}> · {timeStr}</span>
+                )}
               </div>
             )}
           </div>
-        ))}
-      </div>
-
-      {/* Property info bar */}
-      <div
-        style={{
-          background: "#f8fafc",
-          borderBottom: "1px solid #e5e7eb",
-          padding: "16px 28px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "16px",
-        }}
-      >
-        <div>
-          <div style={{ fontSize: "26px", fontWeight: 800, color: "#1e293b" }}>
-            {propertyData.price ? formatCurrency(propertyData.price) : "Price Upon Request"}
-          </div>
-          <div style={{ fontSize: "14px", color: "#475569", marginTop: "2px" }}>
-            {[propertyData.address, propertyData.city, propertyData.state].filter(Boolean).join(", ")}
-            {propertyData.zipCode ? ` ${propertyData.zipCode}` : ""}
+          <div style={{ textAlign: "right" }}>
+            <div
+              style={{
+                fontSize: "50px",
+                fontWeight: 900,
+                color: "#0f172a",
+                lineHeight: 1,
+                letterSpacing: "-2px",
+              }}
+            >
+              {propertyData.price ? formatCurrency(propertyData.price) : ""}
+            </div>
+            {propertyData.mlsNumber && (
+              <div
+                style={{ fontSize: "10px", color: "#94a3b8", marginTop: "3px", letterSpacing: "0.04em" }}
+              >
+                MLS# {propertyData.mlsNumber}
+              </div>
+            )}
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "20px", flexShrink: 0 }}>
-          {[
-            propertyData.bedrooms ? { label: "Beds", value: propertyData.bedrooms } : null,
-            propertyData.bathrooms ? { label: "Baths", value: propertyData.bathrooms } : null,
-            propertyData.squareFeet ? { label: "Sq Ft", value: propertyData.squareFeet.toLocaleString() } : null,
-            propertyData.yearBuilt ? { label: "Built", value: propertyData.yearBuilt } : null,
-          ]
-            .filter(Boolean)
-            .map((stat, idx) => (
-              <div key={idx} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "20px", fontWeight: 700, color: "#1e293b" }}>{stat!.value}</div>
-                <div style={{ fontSize: "9px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        {/* Address */}
+        <div style={{ marginTop: "10px" }}>
+          <div style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a" }}>
+            {propertyData.address}
+          </div>
+          <div style={{ fontSize: "13px", color: "#64748b", marginTop: "2px" }}>
+            {[propertyData.city, propertyData.state, propertyData.zipCode]
+              .filter(Boolean)
+              .join(", ")}
+          </div>
+        </div>
+      </div>
+
+      {/* Thin accent rule */}
+      <div
+        style={{
+          height: "1px",
+          background: `linear-gradient(90deg, ${primaryColor} 0%, ${primaryColor}44 60%, transparent 100%)`,
+          margin: "12px 36px 0",
+          flexShrink: 0,
+        }}
+      />
+
+      {/* Photo strip: 60% large + 40% two stacked */}
+      <div
+        style={{
+          display: "flex",
+          height: "280px",
+          flexShrink: 0,
+          gap: "2px",
+          marginTop: "10px",
+        }}
+      >
+        {/* Main photo */}
+        <div
+          style={{
+            width: "60%",
+            overflow: "hidden",
+            flexShrink: 0,
+            background: "#e8edf2",
+          }}
+        >
+          {photos[0] ? (
+            <img
+              src={photos[0]}
+              alt="Property main"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : (
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <span style={{ fontSize: "56px", opacity: 0.07 }}>🏡</span>
+            </div>
+          )}
+        </div>
+
+        {/* Two stacked photos */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
+          {[1, 2].map((idx) => (
+            <div
+              key={idx}
+              style={{
+                flex: 1,
+                overflow: "hidden",
+                background: "#e8edf2",
+                opacity: idx === 2 ? 0.9 : 1,
+              }}
+            >
+              {photos[idx] ? (
+                <img
+                  src={photos[idx]}
+                  alt={`Property ${idx + 1}`}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <span style={{ fontSize: "32px", opacity: 0.07 }}>🏡</span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Stats strip */}
+      {stats.length > 0 && (
+        <div style={{ padding: "14px 36px 0", flexShrink: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              borderTop: "1px solid #e2e8f0",
+              paddingTop: "12px",
+            }}
+          >
+            {stats.map((stat, idx) => (
+              <div
+                key={idx}
+                style={{
+                  flex: 1,
+                  textAlign: "center",
+                  borderRight: idx < stats.length - 1 ? "1px solid #e2e8f0" : "none",
+                  padding: "0 8px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "22px",
+                    fontWeight: 900,
+                    color: "#0f172a",
+                    lineHeight: 1,
+                    letterSpacing: "-0.5px",
+                  }}
+                >
+                  {stat!.value}
+                </div>
+                <div
+                  style={{
+                    fontSize: "8.5px",
+                    color: "#94a3b8",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.12em",
+                    marginTop: "4px",
+                  }}
+                >
                   {stat!.label}
                 </div>
               </div>
             ))}
-        </div>
-
-        {/* Open house badge */}
-        {propertyData.openHouseDate && (
-          <div
-            style={{
-              background: primaryColor,
-              color: "#ffffff",
-              padding: "10px 16px",
-              borderRadius: "8px",
-              textAlign: "center",
-              flexShrink: 0,
-            }}
-          >
-            <div style={{ fontSize: "9px", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.85 }}>
-              Open House
-            </div>
-            <div style={{ fontSize: "14px", fontWeight: 800 }}>
-              {new Date(propertyData.openHouseDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-            </div>
-            {(propertyData.openHouseStartTime || propertyData.openHouseEndTime) && (
-              <div style={{ fontSize: "10px", opacity: 0.85 }}>
-                {propertyData.openHouseStartTime}
-                {propertyData.openHouseEndTime ? `–${propertyData.openHouseEndTime}` : ""}
-              </div>
-            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Three scenario columns */}
-      {scenarios.length > 0 && (
-        <div style={{ padding: "20px 28px 16px", flex: 1 }}>
+      {/* Scenarios or description — yields space to the footer/disclaimer below, which must never be clipped */}
+      {scenarios.length > 0 ? (
+        <div style={{ padding: "18px 36px 0", flex: 1, minHeight: 0, overflow: "hidden" }}>
           <div
             style={{
-              fontSize: "11px",
+              fontSize: "9px",
               fontWeight: 700,
-              color: "#64748b",
+              color: "#94a3b8",
               textTransform: "uppercase",
-              letterSpacing: "0.08em",
+              letterSpacing: "0.16em",
               marginBottom: "12px",
             }}
           >
             Financing Options
           </div>
-          <div style={{ display: "flex", gap: "12px" }}>
+          <div style={{ display: "flex", gap: "10px" }}>
             {scenarios.map((s, idx) => (
-              <ScenarioColumn
-                key={idx}
-                scenario={s}
-                primaryColor={primaryColor}
-                index={idx}
-              />
+              <ScenarioColumn key={idx} scenario={s} primaryColor={primaryColor} />
             ))}
-            {/* Fill empty columns */}
             {scenarios.length === 1 && <div style={{ flex: 2 }} />}
             {scenarios.length === 2 && <div style={{ flex: 1 }} />}
           </div>
-          <p style={{ fontSize: "8px", color: "#94a3b8", marginTop: "8px", lineHeight: "1.4" }}>
-            *Rates shown are for illustrative purposes only. Actual rates may vary. Contact your loan officer for a personalized quote.
+          <p
+            style={{
+              fontSize: "7.5px",
+              color: "#94a3b8",
+              marginTop: "8px",
+              lineHeight: "1.4",
+            }}
+          >
+            *Rates shown for illustrative purposes only. Actual rates may vary. Contact your loan
+            officer for a personalized quote.
           </p>
         </div>
-      )}
-
-      {/* Description (when no scenarios) */}
-      {scenarios.length === 0 && propertyData.description && (
-        <div style={{ padding: "20px 28px", flex: 1 }}>
-          <div style={{ fontSize: "12px", color: "#475569", lineHeight: "1.7" }}>
-            {propertyData.description.slice(0, 400)}
-            {propertyData.description.length > 400 ? "…" : ""}
+      ) : propertyData.description ? (
+        <div style={{ padding: "18px 36px 0", flex: 1, minHeight: 0, overflow: "hidden" }}>
+          <div style={{ fontSize: "12px", color: "#475569", lineHeight: "1.72" }}>
+            {propertyData.description.slice(0, 360)}
+            {propertyData.description.length > 360 ? "…" : ""}
           </div>
         </div>
+      ) : (
+        <div style={{ flex: 1 }} />
       )}
 
       <div style={{ flex: 1 }} />
 
-      {/* Footer */}
-      <div style={{ position: "relative" }}>
-        <FlyerFooter
-          loanOfficer={loanOfficer}
-          realtor={realtor}
-          company={company}
-          qrCodeDataUrl={qrCodeDataUrl}
-        />
-      </div>
+      <FlyerFooter
+        loanOfficer={loanOfficer}
+        realtor={realtor}
+        company={company}
+        qrCodeDataUrl={qrCodeDataUrl}
+      />
     </div>
   );
 }

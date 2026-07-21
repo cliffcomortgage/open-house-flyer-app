@@ -8,6 +8,159 @@ interface FlyerFooterProps {
   qrCodeDataUrl: string | null;
 }
 
+function EHLLogo() {
+  return (
+    <img
+      src="/logos/equal-housing-lender-1.svg"
+      alt="Equal Housing Lender"
+      style={{ width: "26px", height: "26px", flexShrink: 0, objectFit: "contain" }}
+    />
+  );
+}
+
+function MLSBadge() {
+  return (
+    <img
+      src="/logos/MLS-Realtor-Logo.png"
+      alt="MLS REALTOR"
+      style={{
+        height: "26px",
+        flexShrink: 0,
+        objectFit: "contain",
+        alignSelf: "flex-start",
+        marginTop: "1px",
+      }}
+    />
+  );
+}
+
+function buildOneLiner(
+  street: string | null,
+  suite: string | null,
+  city: string | null,
+  state: string | null,
+  zip: string | null,
+  fallback: string | null
+): string | null {
+  if (street) {
+    const parts: string[] = [street];
+    if (suite) parts.push(`Ste ${suite}`);
+    const cityLine = [city, state, zip].filter(Boolean).join(" ");
+    if (cityLine) parts.push(cityLine);
+    return parts.join(", ");
+  }
+  return fallback;
+}
+
+// Fixed bounding box for both logos — objectFit:contain means each logo scales to fit.
+// KW (1.9:1 ratio) fills most of the 44px height; Cliffco (3.83:1) fills the width, appearing shorter.
+const LOGO_BOX_W = 92;
+const LOGO_BOX_H = 44;
+
+// ─── Single agent card: [headshot] [info] [logo] ──────────────────────────────
+function AgentCard({
+  headshotUrl,
+  name,
+  title,
+  companyName,
+  phones,
+  email,
+  website,
+  address,
+  logoUrl,
+  logoAlt,
+  primaryColor,
+}: {
+  headshotUrl: string | null;
+  name: string;
+  title?: string | null;
+  companyName?: string | null;
+  phones: string;
+  email?: string | null;
+  website?: string | null;
+  address?: string | null;
+  logoUrl?: string | null;
+  logoAlt?: string;
+  primaryColor: string;
+}) {
+  return (
+    <div
+      style={{
+        flex: 1,
+        display: "flex",
+        gap: "10px",
+        alignItems: "flex-start",
+        minWidth: 0,
+        paddingRight: "24px",
+      }}
+    >
+      {/* Headshot */}
+      {headshotUrl && (
+        <img
+          src={headshotUrl}
+          alt={name}
+          style={{
+            width: "48px",
+            height: "48px",
+            borderRadius: "50%",
+            objectFit: "cover",
+            flexShrink: 0,
+            border: `2px solid ${primaryColor}28`,
+          }}
+        />
+      )}
+
+      {/* Info text */}
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ fontWeight: 700, fontSize: "12px", color: "#0f172a", lineHeight: "1.2" }}>
+          {name}
+        </div>
+        {title && (
+          <div style={{ fontSize: "10px", color: "#64748b", marginTop: "1px" }}>{title}</div>
+        )}
+        {companyName && (
+          <div style={{ fontSize: "9.5px", color: "#64748b" }}>{companyName}</div>
+        )}
+        {phones && (
+          <div style={{ fontSize: "9.5px", color: "#475569", marginTop: "3px" }}>{phones}</div>
+        )}
+        {email && <div style={{ fontSize: "9.5px", color: "#64748b" }}>{email}</div>}
+        {website && (
+          <div style={{ fontSize: "9.5px", color: "#64748b" }}>
+            {website.replace(/^https?:\/\//, "")}
+          </div>
+        )}
+        {address && (
+          <div style={{ fontSize: "9px", color: "#94a3b8", marginTop: "2px" }}>{address}</div>
+        )}
+      </div>
+
+      {/* Company logo — same fixed bounding box for both agents, top-aligned with name */}
+      {logoUrl && (
+        <div
+          style={{
+            flexShrink: 0,
+            width: `${LOGO_BOX_W}px`,
+            height: `${LOGO_BOX_H}px`,
+            alignSelf: "flex-start",
+          }}
+        >
+          <img
+            src={logoUrl}
+            alt={logoAlt || ""}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              objectPosition: "left top",
+            }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function FlyerFooter({
   loanOfficer,
   realtor,
@@ -16,180 +169,172 @@ export function FlyerFooter({
 }: FlyerFooterProps) {
   const primaryColor = realtor?.brandPrimary || company.primaryColor || "#6633cc";
 
+  const loPhone = [
+    loanOfficer.cellPhone && `C: ${formatPhone(loanOfficer.cellPhone)}`,
+    loanOfficer.officePhone && `O: ${formatPhone(loanOfficer.officePhone)}`,
+  ]
+    .filter(Boolean)
+    .join("  |  ");
+
+  const rePhone = realtor
+    ? [
+        realtor.cellPhone && `C: ${formatPhone(realtor.cellPhone)}`,
+        realtor.officePhone && `O: ${formatPhone(realtor.officePhone)}`,
+      ]
+        .filter(Boolean)
+        .join("  |  ")
+    : "";
+
+  const loAddr = buildOneLiner(
+    loanOfficer.branchStreet,
+    loanOfficer.branchSuite,
+    loanOfficer.branchCity,
+    loanOfficer.branchState,
+    loanOfficer.branchZip,
+    loanOfficer.branchAddress
+  );
+
+  const reAddr = realtor
+    ? buildOneLiner(
+        realtor.officeStreet,
+        realtor.officeSuite,
+        realtor.officeCity,
+        realtor.officeState,
+        realtor.officeZip,
+        realtor.officeAddress
+      )
+    : null;
+
+  const showLicenseLine = !!(company.licenseText || loanOfficer.branchNmls);
+
+  // Build LO name + NMLS as the "title" line
+  const loSubtitle = [loanOfficer.title, `NMLS# ${loanOfficer.nmlsNumber}`]
+    .filter(Boolean)
+    .join("  ·  ");
+
   return (
-    <div
-      style={{
-        background: `${primaryColor}12`,
-        borderTop: `3px solid ${primaryColor}`,
-        padding: "16px 24px 12px",
-        display: "flex",
-        gap: "20px",
-        alignItems: "flex-start",
-      }}
-    >
-      {/* Realtor column */}
-      {realtor && (
-        <div style={{ flex: 1, display: "flex", gap: "12px", alignItems: "center" }}>
-          {realtor.headshotUrl && (
-            <img
-              src={realtor.headshotUrl}
-              alt={`${realtor.firstName} ${realtor.lastName}`}
-              style={{
-                width: "52px",
-                height: "52px",
-                borderRadius: "50%",
-                objectFit: "cover",
-                flexShrink: 0,
-              }}
+    <div style={{ flexShrink: 0 }}>
+      {/* ── Main footer body ── */}
+      <div
+        style={{
+          borderTop: `4px solid ${primaryColor}`,
+          background: "#ffffff",
+          padding: "14px 22px 12px",
+        }}
+      >
+        <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+
+          {/* LO: [headshot] [info] [Cliffco logo] */}
+          <AgentCard
+            headshotUrl={loanOfficer.headshotUrl}
+            name={`${loanOfficer.firstName} ${loanOfficer.lastName}`}
+            title={loSubtitle}
+            phones={loPhone}
+            email={loanOfficer.email}
+            website={loanOfficer.website}
+            address={loAddr}
+            logoUrl={company.logoUrl}
+            logoAlt={company.name}
+            primaryColor={primaryColor}
+          />
+
+          {/* QR code with dividers */}
+          {qrCodeDataUrl && (
+            <>
+              <div
+                style={{
+                  width: "1px",
+                  alignSelf: "stretch",
+                  background: `${primaryColor}22`,
+                  flexShrink: 0,
+                }}
+              />
+              <div style={{ flexShrink: 0, textAlign: "center", paddingTop: "2px" }}>
+                <img
+                  src={qrCodeDataUrl}
+                  alt="QR Code"
+                  style={{ width: "54px", height: "54px" }}
+                />
+                <div style={{ fontSize: "7px", color: "#94a3b8", marginTop: "2px" }}>
+                  Scan to view
+                </div>
+              </div>
+              <div
+                style={{
+                  width: "1px",
+                  alignSelf: "stretch",
+                  background: `${primaryColor}22`,
+                  flexShrink: 0,
+                }}
+              />
+            </>
+          )}
+
+          {/* Realtor: [headshot] [info] [brokerage logo] — same format as LO */}
+          {realtor && (
+            <AgentCard
+              headshotUrl={realtor.headshotUrl}
+              name={`${realtor.firstName} ${realtor.lastName}`}
+              title={realtor.title}
+              companyName={realtor.companyName}
+              phones={rePhone}
+              email={realtor.email}
+              website={realtor.website}
+              address={reAddr}
+              logoUrl={realtor.companyLogoUrl}
+              logoAlt={realtor.companyName || "Realtor"}
+              primaryColor={primaryColor}
             />
           )}
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: "13px", color: "#1e293b", lineHeight: "1.2" }}>
-              {realtor.firstName} {realtor.lastName}
-            </div>
-            <div style={{ fontSize: "11px", color: "#475569", marginTop: "2px" }}>
-              {realtor.title}
-            </div>
-            {realtor.companyName && (
-              <div style={{ fontSize: "11px", color: "#475569" }}>
-                {realtor.companyName}
-              </div>
-            )}
-            {realtor.cellPhone && (
-              <div style={{ fontSize: "10px", color: "#64748b", marginTop: "2px" }}>
-                {formatPhone(realtor.cellPhone)}
-              </div>
-            )}
-            {realtor.officePhone && (
-              <div style={{ fontSize: "10px", color: "#64748b" }}>
-                {formatPhone(realtor.officePhone)}
-              </div>
-            )}
-            {realtor.email && (
-              <div style={{ fontSize: "10px", color: "#64748b" }}>{realtor.email}</div>
-            )}
-            {realtor.website && (
-              <div style={{ fontSize: "10px", color: "#64748b" }}>
-                {realtor.website.replace(/^https?:\/\//, "")}
-              </div>
-            )}
-            {realtor.companyLogoUrl && (
-              <img
-                src={realtor.companyLogoUrl}
-                alt={realtor.companyName}
-                style={{ height: "20px", objectFit: "contain", marginTop: "6px" }}
-              />
-            )}
-          </div>
         </div>
-      )}
-
-      {/* Divider */}
-      {realtor && (
-        <div
-          style={{
-            width: "1px",
-            background: `${primaryColor}30`,
-            alignSelf: "stretch",
-            flexShrink: 0,
-          }}
-        />
-      )}
-
-      {/* QR code (center column) */}
-      {qrCodeDataUrl && (
-        <div style={{ flexShrink: 0, textAlign: "center" }}>
-          <img
-            src={qrCodeDataUrl}
-            alt="QR Code"
-            style={{ width: "64px", height: "64px" }}
-          />
-          <div style={{ fontSize: "8px", color: "#94a3b8", marginTop: "2px" }}>Scan to view</div>
-        </div>
-      )}
-
-      {/* LO column */}
-      <div style={{ flex: 1, display: "flex", gap: "12px", alignItems: "center", justifyContent: "flex-end" }}>
-        <div style={{ textAlign: "right", minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: "13px", color: "#1e293b", lineHeight: "1.2" }}>
-            {loanOfficer.firstName} {loanOfficer.lastName}
-          </div>
-          <div style={{ fontSize: "11px", color: "#475569", marginTop: "2px" }}>
-            {loanOfficer.title}
-          </div>
-          <div style={{ fontSize: "10px", color: "#64748b" }}>
-            NMLS# {loanOfficer.nmlsNumber}
-          </div>
-          {loanOfficer.cellPhone && (
-            <div style={{ fontSize: "10px", color: "#64748b", marginTop: "2px" }}>
-              {formatPhone(loanOfficer.cellPhone)}
-            </div>
-          )}
-          {loanOfficer.officePhone && (
-            <div style={{ fontSize: "10px", color: "#64748b" }}>
-              {formatPhone(loanOfficer.officePhone)}
-            </div>
-          )}
-          {loanOfficer.email && (
-            <div style={{ fontSize: "10px", color: "#64748b" }}>{loanOfficer.email}</div>
-          )}
-          {loanOfficer.website && (
-            <div style={{ fontSize: "10px", color: "#64748b" }}>
-              {loanOfficer.website.replace(/^https?:\/\//, "")}
-            </div>
-          )}
-          {loanOfficer.branchAddress && (
-            <div style={{ fontSize: "10px", color: "#94a3b8", marginTop: "2px" }}>
-              {loanOfficer.branchAddress}
-            </div>
-          )}
-        </div>
-        {loanOfficer.headshotUrl && (
-          <img
-            src={loanOfficer.headshotUrl}
-            alt={`${loanOfficer.firstName} ${loanOfficer.lastName}`}
-            style={{
-              width: "52px",
-              height: "52px",
-              borderRadius: "50%",
-              objectFit: "cover",
-              flexShrink: 0,
-            }}
-          />
-        )}
-        {(company.logoUrl || company.website) && (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, gap: "3px" }}>
-            {company.logoUrl && (
-              <img
-                src={company.logoUrl}
-                alt={company.name}
-                style={{ height: "32px", objectFit: "contain" }}
-              />
-            )}
-            {company.website && (
-              <div style={{ fontSize: "9px", color: "#64748b" }}>
-                {company.website.replace(/^https?:\/\//, "")}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Disclaimer */}
+      {/* ── MLS + license strip ── */}
+      <div
+        style={{
+          background: "#f8fafc",
+          borderTop: "1px solid #e2e8f0",
+          padding: "5px 22px",
+          display: "flex",
+          alignItems: "flex-start",
+          gap: "8px",
+        }}
+      >
+        <MLSBadge />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: "7px", color: "#64748b", lineHeight: "1.45", margin: 0 }}>
+            Each office is independently owned and operated. If your home is currently listed for
+            sale with a real estate agent, disregard this notice. It is not our intent to solicit
+            the offerings of other brokers.
+          </p>
+          {showLicenseLine && (
+            <p
+              style={{ fontSize: "7px", color: "#64748b", lineHeight: "1.45", margin: "2px 0 0" }}
+            >
+              {company.licenseText}
+              {company.licenseText && loanOfficer.branchNmls ? "  |  " : ""}
+              {loanOfficer.branchNmls && `Branch NMLS# ${loanOfficer.branchNmls}`}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* ── Disclaimer strip with EHL logo ── */}
       {loanOfficer.disclaimer && (
         <div
           style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            fontSize: "7.5px",
-            color: "#94a3b8",
-            padding: "4px 24px",
-            background: `${primaryColor}08`,
+            background: "#f1f5f9",
+            borderTop: "1px solid #e2e8f0",
+            padding: "5px 22px",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "8px",
           }}
         >
-          {loanOfficer.disclaimer}
+          <EHLLogo />
+          <p style={{ fontSize: "6px", color: "#94a3b8", lineHeight: "1.5", margin: 0 }}>
+            {loanOfficer.disclaimer}
+          </p>
         </div>
       )}
     </div>

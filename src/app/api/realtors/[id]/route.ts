@@ -12,6 +12,16 @@ async function getOwnedRealtor(realtorId: string, loId: string) {
   });
 }
 
+function assembleOfficeAddress(street?: string, suite?: string, city?: string, state?: string, zip?: string): string | null {
+  const parts: string[] = [];
+  if (street?.trim()) parts.push(street.trim());
+  if (suite?.trim()) parts.push(`Suite ${suite.trim()}`);
+  if (city?.trim()) parts.push(city.trim());
+  const stateZip = [state?.trim(), zip?.trim()].filter(Boolean).join(" ");
+  if (stateZip) parts.push(stateZip);
+  return parts.join(", ") || null;
+}
+
 export async function GET(
   _req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -46,9 +56,12 @@ export async function PUT(
   const body = await req.json();
   const {
     firstName, lastName, title, companyName,
-    officePhone, cellPhone, email, website, officeAddress,
+    officePhone, cellPhone, email, website,
+    officeStreet, officeSuite, officeCity, officeState, officeZip,
     headshotUrl, companyLogoUrl, brandPrimary, brandSecondary,
   } = body;
+
+  const officeAddress = assembleOfficeAddress(officeStreet, officeSuite, officeCity, officeState, officeZip);
 
   const updated = await prisma.realtor.update({
     where: { id },
@@ -60,7 +73,12 @@ export async function PUT(
       cellPhone: cellPhone || null,
       email: email || null,
       website: website || null,
-      officeAddress: officeAddress || null,
+      officeAddress,
+      officeStreet: officeStreet || null,
+      officeSuite: officeSuite || null,
+      officeCity: officeCity || null,
+      officeState: officeState || null,
+      officeZip: officeZip || null,
       headshotUrl: headshotUrl ?? existing.headshotUrl,
       companyLogoUrl: companyLogoUrl ?? existing.companyLogoUrl,
       brandPrimary: brandPrimary || null,

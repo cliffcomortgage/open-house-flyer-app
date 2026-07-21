@@ -12,11 +12,15 @@ export async function searchMLSListings(
   query: string,
   limit = 10
 ): Promise<MLSSearchResult[]> {
-  const params = new URLSearchParams({
-    q: query,
-    limit: String(limit),
-    status: "Active",
-  });
+  const isMLSId = /^\d+$/.test(query.trim());
+
+  // For numeric MLS ID queries, fetch without a text filter and match by listingId
+  // (SimplyRETS doesn't support filtering by listingId in the search endpoint)
+  const params = new URLSearchParams(
+    isMLSId
+      ? { limit: "50", status: "Active" }
+      : { q: query, limit: String(limit), status: "Active" }
+  );
 
   const res = await fetch(`${BASE_URL}/properties?${params}`, {
     headers: { Authorization: authHeader },
@@ -25,9 +29,13 @@ export async function searchMLSListings(
 
   if (!res.ok) throw new Error(`MLS search failed: ${res.statusText}`);
 
-  const data = await res.json();
+  const data: any[] = await res.json();
 
-  return data.map((listing: any): MLSSearchResult => ({
+  const filtered = isMLSId
+    ? data.filter((l) => String(l.listingId) === query.trim())
+    : data;
+
+  return filtered.slice(0, limit).map((listing: any): MLSSearchResult => ({
     mlsId: listing.listingId || listing.mlsId,
     address: listing.address?.full || listing.address?.streetNumber + " " + listing.address?.streetName,
     city: listing.address?.city || "",

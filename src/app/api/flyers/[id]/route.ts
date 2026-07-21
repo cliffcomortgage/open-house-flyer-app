@@ -52,7 +52,7 @@ export async function PUT(
   const body = await req.json();
   const {
     templateId, title, propertyData, realtorId,
-    loanScenarios, qrCodeData, status,
+    loanScenarios, qrCodeData, status, distributionState,
   } = body;
 
   if (realtorId) {
@@ -74,6 +74,7 @@ export async function PUT(
       loanScenarios: loanScenarios !== undefined ? loanScenarios : existing.loanScenarios,
       qrCodeData: qrCodeData !== undefined ? qrCodeData : existing.qrCodeData,
       status: status || existing.status,
+      distributionState: distributionState !== undefined ? (distributionState || null) : existing.distributionState,
     },
     include: {
       loanOfficer: {

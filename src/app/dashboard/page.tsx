@@ -2,11 +2,12 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Users, TrendingUp, Plus, Eye, Pencil } from "lucide-react";
+import { DeleteFlyerButton } from "./DeleteFlyerButton";
+import { FlyerActionButtons } from "./FlyerActionButtons";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -221,18 +222,22 @@ export default async function DashboardPage() {
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center justify-end gap-2">
-                          <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+                          <Button asChild variant="ghost" size="icon" className="h-8 w-8" title="Edit">
                             <Link href={`/dashboard/flyers/${flyer.id}/edit`}>
                               <Pencil className="w-3.5 h-3.5 text-slate-500" />
                             </Link>
                           </Button>
-                          {flyer.shareToken && (
-                            <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                              <Link href={`/share/${flyer.shareToken}`} target="_blank">
-                                <Eye className="w-3.5 h-3.5 text-slate-500" />
-                              </Link>
-                            </Button>
-                          )}
+                          <Button asChild variant="ghost" size="icon" className="h-8 w-8" title="Preview">
+                            <Link href={`/dashboard/flyers/${flyer.id}/preview`}>
+                              <Eye className="w-3.5 h-3.5 text-slate-500" />
+                            </Link>
+                          </Button>
+                          <FlyerActionButtons
+                            flyerId={flyer.id}
+                            flyerTitle={flyer.title}
+                            shareToken={flyer.shareToken}
+                          />
+                          <DeleteFlyerButton flyerId={flyer.id} />
                         </div>
                       </td>
                     </tr>
