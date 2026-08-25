@@ -50,7 +50,7 @@ export async function PUT(req: NextRequest) {
     firstName, lastName, title, nmlsNumber,
     officePhone, cellPhone, email, website,
     branchStreet, branchSuite, branchCity, branchState, branchZip,
-    branchNmls, disclaimer, headshotUrl,
+    branchNmls, headshotUrl,
   } = body;
 
   const branchAddress = assembleBranchAddress(branchStreet, branchSuite, branchCity, branchState, branchZip);
@@ -70,7 +70,6 @@ export async function PUT(req: NextRequest) {
       branchState: branchState || null,
       branchZip: branchZip || null,
       branchNmls: branchNmls || null,
-      disclaimer: disclaimer || null,
       headshotUrl: headshotUrl || null,
     },
     include: { user: { select: { email: true, isActive: true } } },

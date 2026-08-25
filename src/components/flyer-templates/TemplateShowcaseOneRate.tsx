@@ -9,6 +9,7 @@ interface TemplateShowcaseOneRateProps {
   company: CompanySettings;
   qrCodeDataUrl: string | null;
   loanScenarios?: LoanScenario[];
+  distributionState?: string | null;
 }
 
 function ScenarioRow({ label, value }: { label: string; value: string }) {
@@ -18,7 +19,7 @@ function ScenarioRow({ label, value }: { label: string; value: string }) {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        padding: "5.5px 0",
+        padding: "4px 0",
         borderBottom: "1px solid #f1f5f9",
       }}
     >
@@ -35,6 +36,7 @@ export function TemplateShowcaseOneRate({
   company,
   qrCodeDataUrl,
   loanScenarios,
+  distributionState,
 }: TemplateShowcaseOneRateProps) {
   const primaryColor = realtor?.brandPrimary || company.primaryColor || "#6633cc";
   const heroPhoto = propertyData.photos?.[0];
@@ -60,12 +62,18 @@ export function TemplateShowcaseOneRate({
       : null,
     propertyData.yearBuilt ? { value: propertyData.yearBuilt, label: "Year Built" } : null,
     propertyData.garage ? { value: propertyData.garage, label: "Garage" } : null,
+    propertyData.stories ? { value: propertyData.stories, label: "Stories" } : null,
+    propertyData.units ? { value: propertyData.units, label: "Units" } : null,
   ].filter(Boolean);
 
   const fullAddress = [propertyData.address, propertyData.city, propertyData.state]
     .filter(Boolean)
     .join(", ")
     .concat(propertyData.zipCode ? ` ${propertyData.zipCode}` : "");
+
+  const addressLine = [fullAddress, propertyData.propertyType, propertyData.propertyUse]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div
@@ -75,7 +83,7 @@ export function TemplateShowcaseOneRate({
         display: "flex",
         flexDirection: "column",
         background: "#ffffff",
-        fontFamily: "Arial, 'Helvetica Neue', Helvetica, sans-serif",
+        fontFamily: 'var(--font-sans), "Segoe UI", Arial, sans-serif',
         overflow: "hidden",
       }}
     >
@@ -87,7 +95,7 @@ export function TemplateShowcaseOneRate({
         style={{
           position: "relative",
           width: "100%",
-          height: "365px",
+          height: "350px",
           flexShrink: 0,
           overflow: "hidden",
           background: "#e8edf2",
@@ -179,7 +187,7 @@ export function TemplateShowcaseOneRate({
                 }}
               />
               <div style={{ fontSize: "14px", color: "#475569", fontWeight: 400 }}>
-                {fullAddress}
+                {addressLine}
               </div>
             </div>
           </div>
@@ -286,9 +294,9 @@ export function TemplateShowcaseOneRate({
         </div>
       </div>
 
-      {/* Loan scenario — white, editorial. Yields space to the footer/disclaimer below, which must never be clipped */}
+      {/* Loan scenario — white, editorial. Fixed to its natural size so rows are never mid-clipped */}
       {scenario && (
-        <div style={{ padding: "20px 36px 0", minHeight: 0, overflow: "hidden" }}>
+        <div style={{ padding: "14px 36px 0", flexShrink: 0 }}>
           <div
             style={{
               fontSize: "9px",
@@ -296,7 +304,7 @@ export function TemplateShowcaseOneRate({
               color: "#94a3b8",
               textTransform: "uppercase",
               letterSpacing: "0.16em",
-              marginBottom: "12px",
+              marginBottom: "10px",
             }}
           >
             Financing Scenario
@@ -312,7 +320,7 @@ export function TemplateShowcaseOneRate({
             {/* Rate column */}
             <div
               style={{
-                padding: "22px 28px",
+                padding: "14px 24px",
                 minWidth: "180px",
                 flexShrink: 0,
                 borderRight: "1px solid #e2e8f0",
@@ -383,7 +391,7 @@ export function TemplateShowcaseOneRate({
             <div
               style={{
                 flex: 1,
-                padding: "22px 24px",
+                padding: "12px 24px",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
@@ -426,6 +434,21 @@ export function TemplateShowcaseOneRate({
               {scenario.miPayment && (
                 <ScenarioRow label="MI" value={`${formatCurrency(scenario.miPayment)}/mo`} />
               )}
+              {scenario.upfrontMip && (
+                <ScenarioRow label="Upfront MIP" value={formatCurrency(scenario.upfrontMip)} />
+              )}
+              {scenario.monthlyMip && (
+                <ScenarioRow label="Monthly MIP" value={`${formatCurrency(scenario.monthlyMip)}/mo`} />
+              )}
+              {scenario.vaFundingFee && (
+                <ScenarioRow label="VA Funding Fee" value={formatCurrency(scenario.vaFundingFee)} />
+              )}
+              {scenario.usdaGuaranteeFee && (
+                <ScenarioRow label="Upfront Guarantee Fee" value={formatCurrency(scenario.usdaGuaranteeFee)} />
+              )}
+              {scenario.usdaAnnualFee && (
+                <ScenarioRow label="Annual Fee" value={`${formatCurrency(scenario.usdaAnnualFee)}/mo`} />
+              )}
               {scenario.hoaFee && (
                 <ScenarioRow label="HOA" value={`${formatCurrency(scenario.hoaFee)}/mo`} />
               )}
@@ -441,7 +464,7 @@ export function TemplateShowcaseOneRate({
                   }}
                 >
                   <span style={{ fontSize: "11px", fontWeight: 700, color: "#0f172a" }}>
-                    Total Monthly
+                    Estimated Monthly Payment
                   </span>
                   <span
                     style={{
@@ -479,6 +502,8 @@ export function TemplateShowcaseOneRate({
         realtor={realtor}
         company={company}
         qrCodeDataUrl={qrCodeDataUrl}
+        distributionState={distributionState}
+        loanScenarios={scenario ? [scenario] : undefined}
       />
     </div>
   );

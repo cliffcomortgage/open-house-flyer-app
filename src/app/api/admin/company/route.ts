@@ -35,7 +35,10 @@ export async function PUT(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { name, website, phone, primaryColor, secondaryColor, logoUrl, logoUrlLight, licenseText } = body;
+  const {
+    name, website, phone, primaryColor, secondaryColor, logoUrl, logoUrlLight, licenseText,
+    standardDisclaimer, stateDisclaimers,
+  } = body;
 
   let company = await prisma.company.findFirst();
 
@@ -50,6 +53,8 @@ export async function PUT(req: NextRequest) {
         logoUrl: logoUrl || null,
         logoUrlLight: logoUrlLight || null,
         licenseText: licenseText || null,
+        standardDisclaimer: standardDisclaimer || null,
+        stateDisclaimers: stateDisclaimers ?? undefined,
       },
     });
   } else {
@@ -64,6 +69,8 @@ export async function PUT(req: NextRequest) {
         logoUrl: logoUrl !== undefined ? (logoUrl || null) : company.logoUrl,
         logoUrlLight: logoUrlLight !== undefined ? (logoUrlLight || null) : company.logoUrlLight,
         licenseText: licenseText !== undefined ? (licenseText || null) : company.licenseText,
+        standardDisclaimer: standardDisclaimer !== undefined ? (standardDisclaimer || null) : company.standardDisclaimer,
+        stateDisclaimers: stateDisclaimers !== undefined ? stateDisclaimers : company.stateDisclaimers,
       },
     });
   }

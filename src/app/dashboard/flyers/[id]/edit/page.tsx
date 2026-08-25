@@ -6,17 +6,14 @@ import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
 import {
   ChevronRight, ChevronLeft, Upload, X, Loader2,
-  Search, Plus, Minus, Check, RefreshCw, QrCode, Download,
+  Plus, Minus, Check, QrCode, Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, calculateMonthlyPI, LOAN_TYPES, getMissingScenarioFields } from "@/lib/utils";
 import { FLYER_TEMPLATES } from "@/types";
 import { US_STATES } from "@/lib/us-states";
 import {
@@ -27,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type {
-  Realtor, PropertyData, LoanScenario, MLSSearchResult, OptimalBlueProduct, Flyer,
+  Realtor, PropertyData, LoanScenario, Flyer,
 } from "@/types";
 
 function StepIndicator({ currentStep, steps }: { currentStep: number; steps: string[] }) {
@@ -59,6 +56,8 @@ const emptyScenario = (): Partial<LoanScenario> => ({
   downPaymentAmount: undefined, loanAmount: undefined, interestRate: undefined,
   apr: undefined, term: 30, loanType: "Conventional", monthlyPayment: undefined,
   piPayment: undefined, taxesInsurance: undefined, hoaFee: undefined, miPayment: undefined,
+  upfrontMip: undefined, monthlyMip: undefined, vaFundingFee: undefined,
+  usdaGuaranteeFee: undefined, usdaAnnualFee: undefined,
 });
 
 export default function EditFlyerPage() {
@@ -76,14 +75,7 @@ export default function EditFlyerPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [realtors, setRealtors] = useState<Realtor[]>([]);
-  const [mlsQuery, setMlsQuery] = useState("");
-  const [mlsResults, setMlsResults] = useState<MLSSearchResult[]>([]);
-  const [mlsLoading, setMlsLoading] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
-  const [obDialogOpen, setObDialogOpen] = useState<number | null>(null);
-  const [obResults, setObResults] = useState<OptimalBlueProduct[]>([]);
-  const [obLoading, setObLoading] = useState(false);
-  const [obForm, setObForm] = useState({ purchasePrice: "", downPaymentPercent: "20", creditScore: "740", state: "", zipCode: "" });
 
   const selectedTemplate = FLYER_TEMPLATES.find((t) => t.id === templateId)!;
   const hasFinancing = selectedTemplate?.hasLoanScenarios;
@@ -121,14 +113,12 @@ export default function EditFlyerPage() {
     load();
   }, [id, router]);
 
-  // Update obForm state when propertyData changes
-  useEffect(() => {
-    setObForm((prev) => ({
-      ...prev,
-      state: prev.state || propertyData.state || "",
-      zipCode: prev.zipCode || propertyData.zipCode || "",
-    }));
-  }, [propertyData.state, propertyData.zipCode]);
+  const canAdvance = () => {
+    if (step === 3 && hasFinancing) {
+      return scenarios.every((s) => getMissingScenarioFields(s).length === 0);
+    }
+    return true;
+  };
 
   const advance = () => {
     const nextIdx = currentVisibleStep + 1;
@@ -209,76 +199,63 @@ export default function EditFlyerPage() {
     multiple: true,
   });
 
-  const searchMLS = async () => {
-    if (!mlsQuery.trim()) return;
-    setMlsLoading(true);
-    try {
-      const res = await fetch(`/api/mls/search?q=${encodeURIComponent(mlsQuery)}`);
-      if (!res.ok) throw new Error();
-      setMlsResults(await res.json());
-    } catch {
-      toast.error("MLS search failed");
-    } finally {
-      setMlsLoading(false);
-    }
-  };
-
-  const selectMLSResult = async (result: MLSSearchResult) => {
-    try {
-      const res = await fetch(`/api/mls/${result.mlsId}`);
-      if (res.ok) {
-        const data: PropertyData = await res.json();
-        setPropertyData(data);
-      } else {
-        setPropertyData({ address: result.address, city: result.city, state: result.state, zipCode: result.zipCode, price: result.price, bedrooms: result.bedrooms, bathrooms: result.bathrooms, squareFeet: result.squareFeet, photos: result.photos, mlsNumber: result.mlsId });
-      }
-      setMlsResults([]);
-      setMlsQuery("");
-      toast.success("Property data imported");
-    } catch {
-      toast.error("Failed to import MLS data");
-    }
-  };
-
-  const fetchOBPricing = async () => {
-    setObLoading(true);
-    try {
-      const res = await fetch("/api/optimal-blue/pricing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ purchasePrice: Number(obForm.purchasePrice), downPaymentPercent: Number(obForm.downPaymentPercent), creditScore: Number(obForm.creditScore), state: obForm.state, zipCode: obForm.zipCode }),
-      });
-      if (!res.ok) throw new Error();
-      setObResults(await res.json());
-    } catch {
-      toast.error("Failed to fetch pricing");
-    } finally {
-      setObLoading(false);
-    }
-  };
-
   const updateScenario = (idx: number, patch: Partial<LoanScenario>) => {
     const updated = [...scenarios];
     updated[idx] = { ...updated[idx], ...patch };
+    const s = updated[idx];
+
+    // Auto-calc loan amount from purchase price + down payment %
     if (patch.purchasePrice !== undefined || patch.downPaymentPercent !== undefined) {
-      const price = (patch.purchasePrice ?? updated[idx].purchasePrice) as number;
-      const pct = (patch.downPaymentPercent ?? updated[idx].downPaymentPercent) as number;
+      const price = s.purchasePrice as number;
+      const pct = s.downPaymentPercent as number;
       if (price && pct !== undefined) {
-        updated[idx].downPaymentAmount = Math.round((price * pct) / 100);
-        updated[idx].loanAmount = Math.round(price - updated[idx].downPaymentAmount!);
+        s.downPaymentAmount = Math.round((price * pct) / 100);
+        s.loanAmount = Math.round(price - s.downPaymentAmount!);
       }
     }
-    setScenarios(updated);
-  };
 
-  const applyOBProduct = (idx: number, product: OptimalBlueProduct) => {
-    updateScenario(idx, {
-      loanType: product.loanType, term: product.term, interestRate: product.rate, apr: product.apr,
-      piPayment: product.monthlyPayment, monthlyPayment: product.monthlyPayment,
-      purchasePrice: Number(obForm.purchasePrice), downPaymentPercent: Number(obForm.downPaymentPercent),
-      label: `${product.term}yr ${product.loanType}`,
-    });
-    setObDialogOpen(null);
+    // Auto-calc P&I and total monthly payment whenever a driving field changes
+    if (
+      patch.purchasePrice !== undefined ||
+      patch.downPaymentPercent !== undefined ||
+      patch.loanAmount !== undefined ||
+      patch.interestRate !== undefined ||
+      patch.term !== undefined ||
+      patch.taxesInsurance !== undefined ||
+      patch.miPayment !== undefined ||
+      patch.hoaFee !== undefined ||
+      patch.monthlyMip !== undefined ||
+      patch.usdaAnnualFee !== undefined
+    ) {
+      if (s.loanAmount && s.interestRate !== undefined && s.term) {
+        s.piPayment = Math.round(calculateMonthlyPI(s.loanAmount, s.interestRate, s.term));
+        s.monthlyPayment = Math.round(
+          s.piPayment +
+            (s.taxesInsurance || 0) +
+            (s.miPayment || 0) +
+            (s.hoaFee || 0) +
+            (s.monthlyMip || 0) +
+            (s.usdaAnnualFee || 0)
+        );
+      }
+    }
+
+    // Clear loan-type-specific fields that no longer apply when the type changes
+    if (patch.loanType !== undefined) {
+      if (patch.loanType !== "FHA") {
+        s.upfrontMip = undefined;
+        s.monthlyMip = undefined;
+      }
+      if (patch.loanType !== "VA") {
+        s.vaFundingFee = undefined;
+      }
+      if (patch.loanType !== "USDA") {
+        s.usdaGuaranteeFee = undefined;
+        s.usdaAnnualFee = undefined;
+      }
+    }
+
+    setScenarios(updated);
   };
 
   if (isLoading) {
@@ -301,9 +278,11 @@ export default function EditFlyerPage() {
     </div>
   );
 
-  const sField = (idx: number, key: keyof LoanScenario, label: string, type = "text", placeholder = "") => (
+  const sField = (idx: number, key: keyof LoanScenario, label: string, type = "text", placeholder = "", required = false) => (
     <div>
-      <Label className="text-xs font-medium text-slate-600 mb-1 block">{label}</Label>
+      <Label className="text-xs font-medium text-slate-600 mb-1 block">
+        {label} {required && <span className="text-red-500">*</span>}
+      </Label>
       <Input type={type} className="h-8 text-sm" placeholder={placeholder}
         value={(scenarios[idx][key] as string | number) ?? ""}
         onChange={(e) => updateScenario(idx, { [key]: type === "number" ? (e.target.value ? Number(e.target.value) : undefined) : e.target.value })}
@@ -335,27 +314,7 @@ export default function EditFlyerPage() {
       <div className="space-y-5">
         <div>
           <h2 className="text-lg font-bold text-slate-900 mb-1">Property information</h2>
-          <p className="text-sm text-slate-500">Update details or search MLS.</p>
-        </div>
-        <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-          <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">MLS Lookup</p>
-          <div className="flex gap-2">
-            <Input className="h-9" placeholder="Search by address, MLS#…" value={mlsQuery} onChange={(e) => setMlsQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && searchMLS()} />
-            <Button type="button" variant="outline" size="sm" className="h-9 shrink-0" onClick={searchMLS} disabled={mlsLoading}>
-              {mlsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            </Button>
-          </div>
-          {mlsResults.length > 0 && (
-            <div className="mt-2 border border-slate-200 rounded-lg bg-white shadow-sm overflow-hidden">
-              {mlsResults.slice(0, 6).map((r) => (
-                <button key={r.mlsId} type="button" onClick={() => selectMLSResult(r)}
-                  className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-slate-100 last:border-0 transition-colors">
-                  <p className="text-sm font-medium text-slate-900">{r.address}, {r.city}</p>
-                  <p className="text-xs text-slate-500">{formatCurrency(r.price)} · {r.bedrooms}bd {r.bathrooms}ba</p>
-                </button>
-              ))}
-            </div>
-          )}
+          <p className="text-sm text-slate-500">Update the property details and photos.</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">{pField("address", "Street address")}</div>
@@ -368,6 +327,11 @@ export default function EditFlyerPage() {
           {pField("yearBuilt", "Year built", "number")}
           {pField("garage", "Garage")}
           {pField("lotSize", "Lot size")}
+          {pField("propertyType", "Property type (optional)", "text", "Single Family")}
+          {pField("propertyUse", "Property use (optional)", "text", "Primary Residence")}
+          {pField("stories", "# of stories (optional)", "number")}
+          {pField("units", "# of units (optional)", "number")}
+          {pField("mlsNumber", "MLS # (optional)", "text", "e.g. 36749718")}
         </div>
         <div className="grid grid-cols-3 gap-4">
           {pField("openHouseDate", "Open house date", "date")}
@@ -457,66 +421,70 @@ export default function EditFlyerPage() {
             <div key={idx} className="bg-slate-50 rounded-xl border border-slate-200 p-5">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-sm font-semibold text-slate-700">Scenario {idx + 1}</span>
-                <div className="flex gap-2">
-                  <Dialog open={obDialogOpen === idx} onOpenChange={(open) => { setObDialogOpen(open ? idx : null); setObResults([]); }}>
-                    <DialogTrigger asChild>
-                      <Button type="button" variant="outline" size="sm" className="h-8 text-xs gap-1.5">
-                        <RefreshCw className="w-3 h-3" /> Fetch from OB
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-xl">
-                      <DialogHeader><DialogTitle className="text-base">Optimal Blue Pricing</DialogTitle></DialogHeader>
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        {(["purchasePrice", "downPaymentPercent", "creditScore", "state", "zipCode"] as const).map((key) => (
-                          <div key={key}>
-                            <Label className="text-xs font-medium text-slate-600 mb-1 block">{key}</Label>
-                            <Input className="h-8 text-sm" value={obForm[key]} onChange={(e) => setObForm((prev) => ({ ...prev, [key]: e.target.value }))} />
-                          </div>
-                        ))}
-                      </div>
-                      <Button type="button" className="w-full mb-4 text-white" style={{ backgroundColor: "#6633cc" }} onClick={fetchOBPricing} disabled={obLoading}>
-                        {obLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Fetching…</> : "Get Rates"}
-                      </Button>
-                      {obResults.length > 0 && (
-                        <div className="max-h-64 overflow-y-auto space-y-2">
-                          {obResults.map((product, pidx) => (
-                            <button key={pidx} type="button" onClick={() => applyOBProduct(idx, product)}
-                              className="w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-blue-50 transition-colors">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-semibold text-slate-900">{product.productName}</p>
-                                  <p className="text-xs text-slate-500">{product.loanType} · {product.term}yr</p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-sm font-bold text-blue-900">{product.rate.toFixed(3)}%</p>
-                                  <p className="text-xs text-slate-500">APR {product.apr.toFixed(3)}%</p>
-                                </div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </DialogContent>
-                  </Dialog>
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => setScenarios((prev) => prev.filter((_, i) => i !== idx))}>
-                    <Minus className="w-3.5 h-3.5 text-red-500" />
-                  </Button>
-                </div>
+                <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => setScenarios((prev) => prev.filter((_, i) => i !== idx))}>
+                  <Minus className="w-3.5 h-3.5 text-red-500" />
+                </Button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {sField(idx, "label", "Label")}
-                {sField(idx, "loanType", "Loan type")}
-                {sField(idx, "term", "Term (yrs)", "number")}
-                {sField(idx, "purchasePrice", "Purchase price", "number")}
-                {sField(idx, "downPaymentPercent", "Down %", "number")}
-                {sField(idx, "loanAmount", "Loan amount", "number")}
-                {sField(idx, "interestRate", "Rate", "number")}
-                {sField(idx, "apr", "APR", "number")}
+                {sField(idx, "label", "Label", "text", "", true)}
+                <div>
+                  <Label className="text-xs font-medium text-slate-600 mb-1 block">
+                    Loan type <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={(s.loanType as string) || undefined}
+                    onValueChange={(v) => v && updateScenario(idx, { loanType: v })}
+                  >
+                    <SelectTrigger className="h-8 text-sm w-full">
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LOAN_TYPES.map((t) => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {sField(idx, "term", "Term (yrs)", "number", "", true)}
+                {sField(idx, "purchasePrice", "Purchase price", "number", "", true)}
+                {sField(idx, "downPaymentPercent", "Down %", "number", "", true)}
+                {sField(idx, "loanAmount", "Loan amount", "number", "", true)}
+                {sField(idx, "interestRate", "Rate", "number", "", true)}
+                {sField(idx, "apr", "APR", "number", "", true)}
                 {sField(idx, "piPayment", "P&I/mo", "number")}
-                {sField(idx, "taxesInsurance", "Tax+Ins/mo", "number")}
-                {sField(idx, "miPayment", "MI/mo", "number")}
+                {sField(idx, "taxesInsurance", "Tax+Ins/mo", "number", "", true)}
+                {sField(
+                  idx,
+                  "miPayment",
+                  "MI/mo",
+                  "number",
+                  "",
+                  (s.loanType === "Conventional" || s.loanType === "Jumbo") && (s.downPaymentPercent ?? 0) < 20
+                )}
                 {sField(idx, "hoaFee", "HOA/mo", "number")}
+                {s.loanType === "FHA" && (
+                  <>
+                    {sField(idx, "upfrontMip", "Upfront MIP", "number", "", true)}
+                    {sField(idx, "monthlyMip", "Monthly MIP", "number", "", true)}
+                  </>
+                )}
+                {s.loanType === "VA" && sField(idx, "vaFundingFee", "VA Funding Fee", "number", "", true)}
+                {s.loanType === "USDA" && (
+                  <>
+                    {sField(idx, "usdaGuaranteeFee", "Upfront Guarantee Fee", "number", "", true)}
+                    {sField(idx, "usdaAnnualFee", "Annual Fee/mo", "number", "", true)}
+                  </>
+                )}
               </div>
+              <p className="text-xs text-slate-400 mt-3">
+                P&I and total monthly payment are calculated automatically from purchase price, down payment, rate, and term — edit them directly to override.
+              </p>
+              {(() => {
+                const missing = getMissingScenarioFields(s);
+                return missing.length > 0 ? (
+                  <p className="text-xs text-amber-600 mt-2">Still needed: {missing.join(", ")}</p>
+                ) : null;
+              })()}
             </div>
           ))}
           {scenarios.length === 0 && (
@@ -604,7 +572,7 @@ export default function EditFlyerPage() {
           <Button type="button" variant="outline" onClick={back} disabled={currentVisibleStep === 0}>
             <ChevronLeft className="w-4 h-4 mr-1" /> Back
           </Button>
-          <Button type="button" style={{ backgroundColor: "#6633cc" }} className="text-white" onClick={advance}>
+          <Button type="button" style={{ backgroundColor: "#6633cc" }} className="text-white" onClick={advance} disabled={!canAdvance()}>
             Continue <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         </div>

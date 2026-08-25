@@ -1,11 +1,13 @@
-import type { LoanOfficer, Realtor, CompanySettings } from "@/types";
-import { formatPhone } from "@/lib/utils";
+import type { LoanOfficer, Realtor, CompanySettings, LoanScenario } from "@/types";
+import { formatPhone, buildRateDisclaimerSentence } from "@/lib/utils";
 
 interface FlyerFooterProps {
   loanOfficer: LoanOfficer;
   realtor: Realtor | null;
   company: CompanySettings;
   qrCodeDataUrl: string | null;
+  distributionState?: string | null;
+  loanScenarios?: LoanScenario[];
 }
 
 function EHLLogo() {
@@ -166,8 +168,19 @@ export function FlyerFooter({
   realtor,
   company,
   qrCodeDataUrl,
+  distributionState,
+  loanScenarios,
 }: FlyerFooterProps) {
   const primaryColor = realtor?.brandPrimary || company.primaryColor || "#6633cc";
+
+  const stateSentence = distributionState ? company.stateDisclaimers?.[distributionState] : undefined;
+  const rateDisclaimers = (loanScenarios || [])
+    .map(buildRateDisclaimerSentence)
+    .filter((s): s is string => !!s)
+    .join(" ");
+  const fullDisclaimer = [company.standardDisclaimer, stateSentence, rateDisclaimers]
+    .filter(Boolean)
+    .join(" ");
 
   const loPhone = [
     loanOfficer.cellPhone && `C: ${formatPhone(loanOfficer.cellPhone)}`,
@@ -213,130 +226,87 @@ export function FlyerFooter({
     .join("  ·  ");
 
   return (
-    <div style={{ flexShrink: 0 }}>
-      {/* ── Main footer body ── */}
-      <div
-        style={{
-          borderTop: `4px solid ${primaryColor}`,
-          background: "#ffffff",
-          padding: "14px 22px 12px",
-        }}
-      >
-        <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+    <div style={{ flexShrink: 0, background: "#ffffff", padding: "12px 22px 8px" }}>
+      {/* ── Agent row: [LO] [QR] [Realtor] — no dividers, spacing only ── */}
+      <div style={{ display: "flex", gap: "18px", alignItems: "flex-start" }}>
+        <AgentCard
+          headshotUrl={loanOfficer.headshotUrl}
+          name={`${loanOfficer.firstName} ${loanOfficer.lastName}`}
+          title={loSubtitle}
+          phones={loPhone}
+          email={loanOfficer.email}
+          website={loanOfficer.website}
+          address={loAddr}
+          logoUrl={company.logoUrl}
+          logoAlt={company.name}
+          primaryColor={primaryColor}
+        />
 
-          {/* LO: [headshot] [info] [Cliffco logo] */}
+        {qrCodeDataUrl && (
+          <div style={{ flexShrink: 0, textAlign: "center" }}>
+            <img src={qrCodeDataUrl} alt="QR Code" style={{ width: "50px", height: "50px" }} />
+            <div style={{ fontSize: "7px", color: "#94a3b8", marginTop: "2px" }}>Scan to view</div>
+          </div>
+        )}
+
+        {realtor && (
           <AgentCard
-            headshotUrl={loanOfficer.headshotUrl}
-            name={`${loanOfficer.firstName} ${loanOfficer.lastName}`}
-            title={loSubtitle}
-            phones={loPhone}
-            email={loanOfficer.email}
-            website={loanOfficer.website}
-            address={loAddr}
-            logoUrl={company.logoUrl}
-            logoAlt={company.name}
+            headshotUrl={realtor.headshotUrl}
+            name={`${realtor.firstName} ${realtor.lastName}`}
+            title={realtor.title}
+            companyName={realtor.companyName}
+            phones={rePhone}
+            email={realtor.email}
+            website={realtor.website}
+            address={reAddr}
+            logoUrl={realtor.companyLogoUrl}
+            logoAlt={realtor.companyName || "Realtor"}
             primaryColor={primaryColor}
           />
-
-          {/* QR code with dividers */}
-          {qrCodeDataUrl && (
-            <>
-              <div
-                style={{
-                  width: "1px",
-                  alignSelf: "stretch",
-                  background: `${primaryColor}22`,
-                  flexShrink: 0,
-                }}
-              />
-              <div style={{ flexShrink: 0, textAlign: "center", paddingTop: "2px" }}>
-                <img
-                  src={qrCodeDataUrl}
-                  alt="QR Code"
-                  style={{ width: "54px", height: "54px" }}
-                />
-                <div style={{ fontSize: "7px", color: "#94a3b8", marginTop: "2px" }}>
-                  Scan to view
-                </div>
-              </div>
-              <div
-                style={{
-                  width: "1px",
-                  alignSelf: "stretch",
-                  background: `${primaryColor}22`,
-                  flexShrink: 0,
-                }}
-              />
-            </>
-          )}
-
-          {/* Realtor: [headshot] [info] [brokerage logo] — same format as LO */}
-          {realtor && (
-            <AgentCard
-              headshotUrl={realtor.headshotUrl}
-              name={`${realtor.firstName} ${realtor.lastName}`}
-              title={realtor.title}
-              companyName={realtor.companyName}
-              phones={rePhone}
-              email={realtor.email}
-              website={realtor.website}
-              address={reAddr}
-              logoUrl={realtor.companyLogoUrl}
-              logoAlt={realtor.companyName || "Realtor"}
-              primaryColor={primaryColor}
-            />
-          )}
-        </div>
+        )}
       </div>
 
-      {/* ── MLS + license strip ── */}
-      <div
-        style={{
-          background: "#f8fafc",
-          borderTop: "1px solid #e2e8f0",
-          padding: "5px 22px",
-          display: "flex",
-          alignItems: "flex-start",
-          gap: "8px",
-        }}
-      >
-        <MLSBadge />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: "7px", color: "#64748b", lineHeight: "1.45", margin: 0 }}>
-            Each office is independently owned and operated. If your home is currently listed for
-            sale with a real estate agent, disregard this notice. It is not our intent to solicit
-            the offerings of other brokers.
-          </p>
-          {showLicenseLine && (
-            <p
-              style={{ fontSize: "7px", color: "#64748b", lineHeight: "1.45", margin: "2px 0 0" }}
-            >
-              {company.licenseText}
-              {company.licenseText && loanOfficer.branchNmls ? "  |  " : ""}
-              {loanOfficer.branchNmls && `Branch NMLS# ${loanOfficer.branchNmls}`}
+      {/* ── Compliance block: MLS/license line, then disclaimer — one flowing block, no borders/backgrounds ── */}
+      <div style={{ marginTop: "6px", display: "flex", flexDirection: "column", gap: "3px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+          <MLSBadge />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: "7px", color: "#64748b", lineHeight: "1.4", margin: 0 }}>
+              Each office is independently owned and operated. If your home is currently listed for
+              sale with a real estate agent, disregard this notice. It is not our intent to solicit
+              the offerings of other brokers.
             </p>
-          )}
+            {showLicenseLine && (
+              <p style={{ fontSize: "7px", color: "#64748b", lineHeight: "1.4", margin: "2px 0 0" }}>
+                {company.licenseText}
+                {company.licenseText && loanOfficer.branchNmls ? "  |  " : ""}
+                {loanOfficer.branchNmls && `Branch NMLS# ${loanOfficer.branchNmls}`}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* ── Disclaimer strip with EHL logo ── */}
-      {loanOfficer.disclaimer && (
-        <div
-          style={{
-            background: "#f1f5f9",
-            borderTop: "1px solid #e2e8f0",
-            padding: "5px 22px",
-            display: "flex",
-            alignItems: "flex-start",
-            gap: "8px",
-          }}
-        >
-          <EHLLogo />
-          <p style={{ fontSize: "6px", color: "#94a3b8", lineHeight: "1.5", margin: 0 }}>
-            {loanOfficer.disclaimer}
-          </p>
-        </div>
-      )}
+        {fullDisclaimer && (
+          <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+            <EHLLogo />
+            <p
+              style={{
+                fontSize: "6px",
+                color: "#94a3b8",
+                lineHeight: "1.4",
+                margin: 0,
+                display: "-webkit-box",
+                WebkitLineClamp: 12,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {fullDisclaimer}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

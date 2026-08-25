@@ -1,20 +1,22 @@
 import { notFound } from "next/navigation";
+import { prisma } from "@/lib/db";
 import type { Flyer, CompanySettings } from "@/types";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, buildRateDisclaimerSentence } from "@/lib/utils";
 
-async function getFlyer(token: string) {
+async function getFlyer(
+  token: string
+): Promise<{ status: "ok"; flyer: Flyer } | { status: "pending" } | { status: "not_found" }> {
   const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
   const res = await fetch(`${baseUrl}/api/share/${token}`, { cache: "no-store" });
-  if (!res.ok) return null;
-  return res.json() as Promise<Flyer>;
+  if (res.status === 403) return { status: "pending" };
+  if (!res.ok) return { status: "not_found" };
+  return { status: "ok", flyer: await res.json() };
 }
 
-async function getCompany() {
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+async function getCompany(): Promise<CompanySettings | null> {
   try {
-    const res = await fetch(`${baseUrl}/api/admin/company`, { next: { revalidate: 300 } });
-    if (!res.ok) return null;
-    return res.json() as Promise<CompanySettings>;
+    const company = await prisma.company.findFirst();
+    return company as unknown as CompanySettings | null;
   } catch {
     return null;
   }
@@ -26,18 +28,39 @@ export default async function SharePage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const [flyer, company] = await Promise.all([
+  const [flyerResult, company] = await Promise.all([
     getFlyer(token),
     getCompany(),
   ]);
 
-  if (!flyer) notFound();
+  if (flyerResult.status === "not_found") notFound();
 
+  if (flyerResult.status === "pending") {
+    return (
+      <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center px-4 text-center">
+        <h1 className="text-xl font-bold text-slate-900 mb-2">Pending compliance review</h1>
+        <p className="text-sm text-slate-500 max-w-md">
+          This flyer includes loan scenario details that are still awaiting compliance approval.
+          It will be available here once approved.
+        </p>
+      </div>
+    );
+  }
+
+  const flyer = flyerResult.flyer;
   const propertyData = flyer.propertyData;
   const lo = flyer.loanOfficer;
   const realtor = flyer.realtor;
   const primaryColor = (realtor as any)?.brandPrimary || company?.primaryColor || "#6633cc";
   const secondaryColor = (realtor as any)?.brandSecondary || company?.secondaryColor || "#0d0d0d";
+  const stateSentence = flyer.distributionState ? company?.stateDisclaimers?.[flyer.distributionState] : undefined;
+  const rateDisclaimers = ((flyer.loanScenarios as any[]) || [])
+    .map(buildRateDisclaimerSentence)
+    .filter((s): s is string => !!s)
+    .join(" ");
+  const fullDisclaimer = [company?.standardDisclaimer, stateSentence, rateDisclaimers]
+    .filter(Boolean)
+    .join(" ");
 
   const shareUrl = typeof window !== "undefined"
     ? window.location.href
@@ -110,6 +133,11 @@ export default async function SharePage({
                 {propertyData?.city && `${propertyData.city}, `}
                 {propertyData?.state} {propertyData?.zipCode}
               </p>
+              {(propertyData?.propertyType || propertyData?.propertyUse) && (
+                <p className="text-sm text-slate-500 mt-0.5">
+                  {[propertyData.propertyType, propertyData.propertyUse].filter(Boolean).join(" · ")}
+                </p>
+              )}
             </div>
             <div
               className="shrink-0 px-3 py-1.5 rounded-lg text-white text-sm font-bold"
@@ -149,6 +177,18 @@ export default async function SharePage({
               <div className="text-center">
                 <p className="text-sm font-bold text-slate-900">{propertyData.garage}</p>
                 <p className="text-xs text-slate-500 uppercase tracking-wide">Garage</p>
+              </div>
+            )}
+            {propertyData?.stories && (
+              <div className="text-center">
+                <p className="text-2xl font-bold text-slate-900">{propertyData.stories}</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide">Stories</p>
+              </div>
+            )}
+            {propertyData?.units && (
+              <div className="text-center">
+                <p className="text-2xl font-bold text-slate-900">{propertyData.units}</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide">Units</p>
               </div>
             )}
           </div>
@@ -205,7 +245,7 @@ export default async function SharePage({
                       )}
                       {s.monthlyPayment && (
                         <div className="flex justify-between border-t border-slate-100 pt-1.5 mt-1.5">
-                          <span className="text-slate-700 font-medium">Total</span>
+                          <span className="text-slate-700 font-medium">Est. Monthly Payment</span>
                           <span className="font-bold text-blue-900">{formatCurrency(s.monthlyPayment)}/mo</span>
                         </div>
                       )}
@@ -250,9 +290,9 @@ export default async function SharePage({
                 </div>
               )}
             </div>
-            {lo?.disclaimer && (
+            {fullDisclaimer && (
               <p className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-200">
-                {lo.disclaimer}
+                {fullDisclaimer}
               </p>
             )}
           </div>

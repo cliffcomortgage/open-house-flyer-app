@@ -38,6 +38,9 @@ yarn-error.log*
 public/uploads/*
 !public/uploads/.gitkeep
 
+# local design reference material — not app content
+public/Example Flyers/
+
 # vercel
 .vercel
 

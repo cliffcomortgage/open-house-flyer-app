@@ -20,5 +20,10 @@ export async function GET(
     return NextResponse.json({ error: "Flyer not found" }, { status: 404 });
   }
 
+  const scenarios = (flyer.loanScenarios as any[]) || [];
+  if (scenarios.length > 0 && flyer.approvalStatus !== "APPROVED") {
+    return NextResponse.json({ error: "pending_review" }, { status: 403 });
+  }
+
   return NextResponse.json(flyer);
 }

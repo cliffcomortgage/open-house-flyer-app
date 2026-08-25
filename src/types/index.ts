@@ -1,5 +1,6 @@
 export type Role = "ADMIN" | "LO";
 export type FlyerStatus = "DRAFT" | "SAVED";
+export type ApprovalStatus = "NOT_SUBMITTED" | "PENDING" | "APPROVED" | "REJECTED";
 
 export interface CompanySettings {
   id: string;
@@ -11,6 +12,8 @@ export interface CompanySettings {
   website: string | null;
   phone: string | null;
   licenseText: string | null;
+  standardDisclaimer: string | null;
+  stateDisclaimers: Record<string, string> | null;
 }
 
 export interface LoanOfficer {
@@ -31,9 +34,8 @@ export interface LoanOfficer {
   branchState: string | null;
   branchZip: string | null;
   branchNmls: string | null;
-  disclaimer: string | null;
   headshotUrl: string | null;
-  user: { email: string; isActive: boolean };
+  user: { email: string; isActive: boolean; hasPassword?: boolean };
   createdAt: string;
 }
 
@@ -73,6 +75,10 @@ export interface PropertyData {
   lotSize: string | null;
   yearBuilt: number | null;
   garage: string | null;
+  propertyType: string | null;
+  propertyUse: string | null;
+  stories: number | null;
+  units: number | null;
   description: string | null;
   photos: string[];
   mlsNumber: string | null;
@@ -96,6 +102,11 @@ export interface LoanScenario {
   taxesInsurance: number | null;
   hoaFee: number | null;
   miPayment: number | null;
+  upfrontMip: number | null;
+  monthlyMip: number | null;
+  vaFundingFee: number | null;
+  usdaGuaranteeFee: number | null;
+  usdaAnnualFee: number | null;
 }
 
 export interface Flyer {
@@ -113,6 +124,10 @@ export interface Flyer {
   shareToken: string | null;
   status: FlyerStatus;
   distributionState: string | null;
+  approvalStatus: ApprovalStatus;
+  submittedForReviewAt: string | null;
+  reviewedAt: string | null;
+  reviewNotes: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -165,31 +180,6 @@ export const FLYER_TEMPLATES: FlyerTemplate[] = [
     photoLayout: "grid",
   },
 ];
-
-export interface MLSSearchResult {
-  mlsId: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  price: number;
-  bedrooms: number;
-  bathrooms: number;
-  squareFeet: number | null;
-  photos: string[];
-  status: string;
-}
-
-export interface OptimalBlueProduct {
-  productName: string;
-  loanType: string;
-  term: number;
-  rate: number;
-  apr: number;
-  points: number;
-  price: number;
-  monthlyPayment: number;
-}
 
 export interface REBrand {
   name: string;

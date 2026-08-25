@@ -8,10 +8,11 @@ export default auth((req) => {
 
   const isAuthPage = nextUrl.pathname.startsWith("/login");
   const isAdminPage = nextUrl.pathname.startsWith("/admin");
-  const isSharePage = nextUrl.pathname.startsWith("/share");
+  const isSharePage = nextUrl.pathname.startsWith("/share") || nextUrl.pathname.startsWith("/api/share");
   const isApiAuth = nextUrl.pathname.startsWith("/api/auth");
+  const isSetPasswordPage = nextUrl.pathname.startsWith("/set-password");
 
-  if (isApiAuth || isSharePage) return NextResponse.next();
+  if (isApiAuth || isSharePage || isSetPasswordPage) return NextResponse.next();
 
   if (isAuthPage) {
     if (isLoggedIn) {

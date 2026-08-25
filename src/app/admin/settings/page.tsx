@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn, isLightColor } from "@/lib/utils";
+import { US_STATES } from "@/lib/us-states";
 import type { CompanySettings } from "@/types";
 
 const settingsSchema = z.object({
@@ -22,6 +23,7 @@ const settingsSchema = z.object({
   primaryColor: z.string().min(4, "Required"),
   secondaryColor: z.string().min(4, "Required"),
   licenseText: z.string().optional(),
+  standardDisclaimer: z.string().optional(),
 });
 
 type SettingsForm = z.infer<typeof settingsSchema>;
@@ -103,6 +105,8 @@ export default function AdminSettingsPage() {
   const [uploadingLight, setUploadingLight] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [stateDisclaimers, setStateDisclaimers] = useState<Record<string, string>>({});
+  const [stateFilter, setStateFilter] = useState("");
 
   const {
     register,
@@ -129,9 +133,11 @@ export default function AdminSettingsPage() {
           primaryColor: data.primaryColor,
           secondaryColor: data.secondaryColor,
           licenseText: data.licenseText || "",
+          standardDisclaimer: data.standardDisclaimer || "",
         });
         setLogoUrl(data.logoUrl);
         setLogoUrlLight(data.logoUrlLight);
+        setStateDisclaimers(data.stateDisclaimers || {});
       } catch {
         toast.error("Failed to load company settings");
       } finally {
@@ -188,10 +194,20 @@ export default function AdminSettingsPage() {
   const onSubmit = async (data: SettingsForm) => {
     setIsSaving(true);
     try {
+      const cleanedStateDisclaimers = Object.fromEntries(
+        Object.entries(stateDisclaimers).filter(([, v]) => v && v.trim())
+      );
       const res = await fetch("/api/admin/company", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, logoUrl, logoUrlLight, licenseText: data.licenseText || null }),
+        body: JSON.stringify({
+          ...data,
+          logoUrl,
+          logoUrlLight,
+          licenseText: data.licenseText || null,
+          standardDisclaimer: data.standardDisclaimer || null,
+          stateDisclaimers: cleanedStateDisclaimers,
+        }),
       });
       if (!res.ok) throw new Error();
       toast.success("Settings saved");
@@ -270,6 +286,69 @@ export default function AdminSettingsPage() {
                 {...register("licenseText")}
               />
               <p className="text-xs text-slate-400 mt-1">Appears in the footer of all flyers next to Branch NMLS#</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Compliance disclaimers */}
+        <Card className="border-slate-200">
+          <CardHeader className="pb-3 border-b border-slate-100">
+            <CardTitle className="text-sm font-semibold text-slate-700">Compliance Disclaimers</CardTitle>
+          </CardHeader>
+          <CardContent className="p-5 space-y-5">
+            <div>
+              <Label htmlFor="standardDisclaimer" className="text-sm font-medium text-slate-700 mb-1.5 block">
+                Standard disclaimer
+              </Label>
+              <Textarea
+                id="standardDisclaimer"
+                className="min-h-[100px] resize-none text-xs"
+                placeholder="Required legal language that appears on every flyer, regardless of distribution state…"
+                {...register("standardDisclaimer")}
+              />
+              <p className="text-xs text-slate-400 mt-1">
+                Appears on every flyer. The matching state sentence below is appended after it, based on the
+                flyer&apos;s distribution state.
+              </p>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <Label className="text-sm font-medium text-slate-700">State licensing sentences</Label>
+                <Input
+                  className="h-8 w-40 text-xs"
+                  placeholder="Filter states…"
+                  value={stateFilter}
+                  onChange={(e) => setStateFilter(e.target.value)}
+                />
+              </div>
+              <p className="text-xs text-slate-400 mb-2">
+                One sentence per state, appended after the standard disclaimer for flyers distributed there. Leave a
+                state blank to mean you are not licensed there — its box will show a red outline as a reminder.
+              </p>
+              <div className="border border-slate-200 rounded-lg max-h-96 overflow-y-auto divide-y divide-slate-100">
+                {US_STATES.filter(
+                  (s) =>
+                    !stateFilter ||
+                    s.name.toLowerCase().includes(stateFilter.toLowerCase()) ||
+                    s.abbr.toLowerCase().includes(stateFilter.toLowerCase())
+                ).map((s) => {
+                  const value = stateDisclaimers[s.abbr] || "";
+                  return (
+                    <div key={s.abbr} className="flex items-center gap-3 px-3 py-2">
+                      <span className="text-xs font-mono font-semibold text-slate-500 w-8 shrink-0">{s.abbr}</span>
+                      <Input
+                        className={cn("h-8 text-xs flex-1", !value && "border-red-200 bg-red-50/40")}
+                        placeholder={`Not licensed in ${s.name}`}
+                        value={value}
+                        onChange={(e) =>
+                          setStateDisclaimers((prev) => ({ ...prev, [s.abbr]: e.target.value }))
+                        }
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </CardContent>
         </Card>

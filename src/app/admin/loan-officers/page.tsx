@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
-import { Pencil, Trash2, UserCheck, UserX, Loader2, Upload, X } from "lucide-react";
+import { Pencil, Trash2, UserCheck, UserX, Loader2, Upload, X, Mail } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,6 @@ import { cn } from "@/lib/utils";
 
 const newLOSchema = z.object({
   email: z.string().email("Invalid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
   firstName: z.string().min(1, "Required"),
   lastName: z.string().min(1, "Required"),
   title: z.string().min(1, "Required"),
@@ -108,6 +107,7 @@ export default function AdminLoanOfficersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [headshotUrl, setHeadshotUrl] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   const {
     register,
@@ -147,7 +147,7 @@ export default function AdminLoanOfficersPage() {
         const err = await res.json();
         throw new Error(err.error || "Failed to create LO");
       }
-      toast.success("Loan officer created");
+      toast.success("Loan officer created — a welcome email was sent to set their password");
       setDialogOpen(false);
       reset();
       setHeadshotUrl(null);
@@ -171,6 +171,22 @@ export default function AdminLoanOfficersPage() {
       fetchLOs();
     } catch {
       toast.error("Failed to update account status");
+    }
+  };
+
+  const resendWelcome = async (lo: LoanOfficer) => {
+    setResendingId(lo.id);
+    try {
+      const res = await fetch(`/api/admin/loan-officers/${lo.id}/resend-welcome`, {
+        method: "POST",
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to resend welcome email");
+      toast.success(`Welcome email resent to ${lo.user.email}`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to resend welcome email");
+    } finally {
+      setResendingId(null);
     }
   };
 
@@ -237,7 +253,6 @@ export default function AdminLoanOfficersPage() {
               <HeadshotDropzone value={headshotUrl} onChange={setHeadshotUrl} />
               <div className="grid grid-cols-2 gap-3">
                 {fieldEl("email", "Email", "email")}
-                {fieldEl("password", "Temporary password", "password")}
                 {fieldEl("firstName", "First name")}
                 {fieldEl("lastName", "Last name")}
                 {fieldEl("title", "Title")}
@@ -245,6 +260,9 @@ export default function AdminLoanOfficersPage() {
                 {fieldEl("officePhone", "Office phone")}
                 {fieldEl("cellPhone", "Cell phone")}
               </div>
+              <p className="text-xs text-slate-500 -mt-1">
+                An email will be sent to this address with a link to set their password.
+              </p>
               {fieldEl("website", "Website", "text", "cliffcomortgage.com")}
               <div>
                 <Label className="text-sm font-medium text-slate-700 mb-1.5 block">Branch address</Label>
@@ -318,9 +336,28 @@ export default function AdminLoanOfficersPage() {
                       >
                         {lo.user.isActive ? "Active" : "Inactive"}
                       </Badge>
+                      {lo.user.hasPassword === false && (
+                        <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-100 ml-1.5">
+                          Pending setup
+                        </Badge>
+                      )}
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1">
+                        {lo.user.hasPassword === false && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="Resend welcome email"
+                            disabled={resendingId === lo.id}
+                            onClick={() => resendWelcome(lo)}
+                          >
+                            {resendingId === lo.id
+                              ? <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />
+                              : <Mail className="w-3.5 h-3.5 text-slate-400" />}
+                          </Button>
+                        )}
                         <Button asChild variant="ghost" size="icon" className="h-8 w-8" title="Edit">
                           <Link href={`/admin/loan-officers/${lo.id}/edit`}>
                             <Pencil className="w-3.5 h-3.5 text-slate-400" />

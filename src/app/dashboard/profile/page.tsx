@@ -10,7 +10,6 @@ import { Upload, X, Loader2, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { LoanOfficer } from "@/types";
@@ -30,7 +29,6 @@ const profileSchema = z.object({
   branchState: z.string().optional(),
   branchZip: z.string().optional(),
   branchNmls: z.string().optional(),
-  disclaimer: z.string().optional(),
 });
 
 type ProfileForm = z.infer<typeof profileSchema>;
@@ -71,7 +69,6 @@ export default function ProfilePage() {
           branchState: lo.branchState || "",
           branchZip: lo.branchZip || "",
           branchNmls: lo.branchNmls || "",
-          disclaimer: lo.disclaimer || "",
         });
         setHeadshotUrl(lo.headshotUrl);
       } catch {
@@ -264,23 +261,6 @@ export default function ProfilePage() {
               </div>
             </div>
             {fieldEl("branchNmls", "Branch NMLS#")}
-          </CardContent>
-        </Card>
-
-        {/* Disclaimer */}
-        <Card className="border-slate-200">
-          <CardHeader className="pb-3 border-b border-slate-100">
-            <CardTitle className="text-sm font-semibold text-slate-700">Disclaimer / Legal Text</CardTitle>
-          </CardHeader>
-          <CardContent className="p-5">
-            <Textarea
-              className="min-h-[100px] resize-none text-xs"
-              placeholder="Equal Housing Lender. NMLS# xxxxxx. Rates subject to change without notice…"
-              {...register("disclaimer")}
-            />
-            <p className="text-xs text-slate-400 mt-2">
-              This text appears in the footer of every flyer you create.
-            </p>
           </CardContent>
         </Card>
 

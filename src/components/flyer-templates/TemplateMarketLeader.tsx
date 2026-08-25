@@ -9,6 +9,7 @@ interface TemplateMarketLeaderProps {
   company: CompanySettings;
   qrCodeDataUrl: string | null;
   loanScenarios?: LoanScenario[];
+  distributionState?: string | null;
 }
 
 function ScenarioColumn({
@@ -34,6 +35,21 @@ function ScenarioColumn({
     scenario.miPayment
       ? { label: "MI", value: `${formatCurrency(scenario.miPayment)}/mo` }
       : null,
+    scenario.upfrontMip
+      ? { label: "Upfront MIP", value: formatCurrency(scenario.upfrontMip) }
+      : null,
+    scenario.monthlyMip
+      ? { label: "Monthly MIP", value: `${formatCurrency(scenario.monthlyMip)}/mo` }
+      : null,
+    scenario.vaFundingFee
+      ? { label: "VA Funding Fee", value: formatCurrency(scenario.vaFundingFee) }
+      : null,
+    scenario.usdaGuaranteeFee
+      ? { label: "Upfront Guarantee Fee", value: formatCurrency(scenario.usdaGuaranteeFee) }
+      : null,
+    scenario.usdaAnnualFee
+      ? { label: "Annual Fee", value: `${formatCurrency(scenario.usdaAnnualFee)}/mo` }
+      : null,
     scenario.hoaFee
       ? { label: "HOA", value: `${formatCurrency(scenario.hoaFee)}/mo` }
       : null,
@@ -53,7 +69,7 @@ function ScenarioColumn({
       <div
         style={{
           borderBottom: `2px solid ${primaryColor}`,
-          padding: "9px 12px",
+          padding: "7px 12px",
           background: "#fafafa",
         }}
       >
@@ -78,7 +94,7 @@ function ScenarioColumn({
         <div
           style={{
             textAlign: "center",
-            padding: "13px 8px 10px",
+            padding: "9px 8px 7px",
             borderBottom: "1px solid #f1f5f9",
           }}
         >
@@ -104,14 +120,14 @@ function ScenarioColumn({
       )}
 
       {/* Breakdown rows */}
-      <div style={{ padding: "9px 12px", flex: 1 }}>
+      <div style={{ padding: "6px 12px", flex: 1 }}>
         {rows.map((row, idx) => (
           <div
             key={idx}
             style={{
               display: "flex",
               justifyContent: "space-between",
-              padding: "4px 0",
+              padding: "2.5px 0",
               fontSize: "10px",
               borderTop: idx > 0 ? "1px solid #f8fafc" : "none",
             }}
@@ -127,12 +143,12 @@ function ScenarioColumn({
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              padding: "7px 0 2px",
+              padding: "5px 0 2px",
               borderTop: "1px solid #e2e8f0",
-              marginTop: "5px",
+              marginTop: "3px",
             }}
           >
-            <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#0f172a" }}>Total/mo</span>
+            <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#0f172a" }}>Est. Monthly Pmt</span>
             <span
               style={{
                 fontSize: "15px",
@@ -157,6 +173,7 @@ export function TemplateMarketLeader({
   company,
   qrCodeDataUrl,
   loanScenarios,
+  distributionState,
 }: TemplateMarketLeaderProps) {
   const primaryColor = realtor?.brandPrimary || company.primaryColor || "#6633cc";
   const photos = propertyData.photos || [];
@@ -182,7 +199,16 @@ export function TemplateMarketLeader({
       : null,
     propertyData.yearBuilt ? { label: "Built", value: propertyData.yearBuilt } : null,
     propertyData.garage ? { label: "Garage", value: propertyData.garage } : null,
+    propertyData.stories ? { label: "Stories", value: propertyData.stories } : null,
+    propertyData.units ? { label: "Units", value: propertyData.units } : null,
   ].filter(Boolean);
+
+  const cityStateZipLine = [propertyData.city, propertyData.state, propertyData.zipCode]
+    .filter(Boolean)
+    .join(", ");
+  const subAddressLine = [cityStateZipLine, propertyData.propertyType, propertyData.propertyUse]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div
@@ -192,7 +218,7 @@ export function TemplateMarketLeader({
         display: "flex",
         flexDirection: "column",
         background: "#ffffff",
-        fontFamily: "Arial, 'Helvetica Neue', Helvetica, sans-serif",
+        fontFamily: 'var(--font-sans), "Segoe UI", Arial, sans-serif',
         overflow: "hidden",
       }}
     >
@@ -260,31 +286,19 @@ export function TemplateMarketLeader({
             {propertyData.address}
           </div>
           <div style={{ fontSize: "13px", color: "#64748b", marginTop: "2px" }}>
-            {[propertyData.city, propertyData.state, propertyData.zipCode]
-              .filter(Boolean)
-              .join(", ")}
+            {subAddressLine}
           </div>
         </div>
       </div>
-
-      {/* Thin accent rule */}
-      <div
-        style={{
-          height: "1px",
-          background: `linear-gradient(90deg, ${primaryColor} 0%, ${primaryColor}44 60%, transparent 100%)`,
-          margin: "12px 36px 0",
-          flexShrink: 0,
-        }}
-      />
 
       {/* Photo strip: 60% large + 40% two stacked */}
       <div
         style={{
           display: "flex",
-          height: "280px",
+          height: "245px",
           flexShrink: 0,
           gap: "2px",
-          marginTop: "10px",
+          marginTop: "16px",
         }}
       >
         {/* Main photo */}
@@ -401,9 +415,9 @@ export function TemplateMarketLeader({
         </div>
       )}
 
-      {/* Scenarios or description — yields space to the footer/disclaimer below, which must never be clipped */}
+      {/* Scenarios or description */}
       {scenarios.length > 0 ? (
-        <div style={{ padding: "18px 36px 0", flex: 1, minHeight: 0, overflow: "hidden" }}>
+        <div style={{ padding: "18px 36px 0", flexShrink: 0 }}>
           <div
             style={{
               fontSize: "9px",
@@ -437,9 +451,18 @@ export function TemplateMarketLeader({
         </div>
       ) : propertyData.description ? (
         <div style={{ padding: "18px 36px 0", flex: 1, minHeight: 0, overflow: "hidden" }}>
-          <div style={{ fontSize: "12px", color: "#475569", lineHeight: "1.72" }}>
-            {propertyData.description.slice(0, 360)}
-            {propertyData.description.length > 360 ? "…" : ""}
+          <div
+            style={{
+              fontSize: "12px",
+              color: "#475569",
+              lineHeight: "1.72",
+              display: "-webkit-box",
+              WebkitLineClamp: 9,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {propertyData.description}
           </div>
         </div>
       ) : (
@@ -453,6 +476,8 @@ export function TemplateMarketLeader({
         realtor={realtor}
         company={company}
         qrCodeDataUrl={qrCodeDataUrl}
+        distributionState={distributionState}
+        loanScenarios={scenarios}
       />
     </div>
   );

@@ -52,6 +52,7 @@ export default async function PrintFlyerPage({
     company,
     qrCodeDataUrl,
     loanScenarios: flyer.loanScenarios || undefined,
+    distributionState: flyer.distributionState,
   };
 
   switch (flyer.templateId) {

@@ -45,6 +45,7 @@ export function FlyerPreview({
     company,
     qrCodeDataUrl,
     loanScenarios: flyer.loanScenarios || undefined,
+    distributionState: flyer.distributionState,
   };
 
   const renderTemplate = () => {

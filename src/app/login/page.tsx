@@ -94,7 +94,7 @@ export default function LoginPage() {
               Create stunning open house flyers in minutes
             </h1>
             <p className="text-lg opacity-70 leading-relaxed" style={{ textWrap: "balance" } as React.CSSProperties}>
-              Pull live MLS data, fetch real-time rates from Optimal Blue, and generate print-ready PDFs — all from one place.
+              Add your property details and financing scenarios, then generate print-ready, co-branded PDFs — all from one place.
             </p>
           </div>
         </div>

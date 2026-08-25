@@ -20,6 +20,14 @@ export async function POST(
   const flyer = await prisma.flyer.findFirst({ where: { id, loanOfficerId: lo.id } });
   if (!flyer) return NextResponse.json({ error: "Flyer not found" }, { status: 404 });
 
+  const scenarios = (flyer.loanScenarios as any[]) || [];
+  if (scenarios.length > 0 && flyer.approvalStatus !== "APPROVED") {
+    return NextResponse.json(
+      { error: "This flyer includes loan scenarios pending compliance approval and cannot be downloaded until approved." },
+      { status: 403 }
+    );
+  }
+
   const cookieHeader = req.headers.get("cookie") || "";
   const printUrl = `${process.env.NEXTAUTH_URL || req.nextUrl.origin}/print/flyers/${id}`;
 

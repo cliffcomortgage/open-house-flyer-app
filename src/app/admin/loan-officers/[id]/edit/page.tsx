@@ -12,7 +12,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,7 +33,6 @@ const editLOSchema = z.object({
   branchState: z.string().optional(),
   branchZip: z.string().optional(),
   branchNmls: z.string().optional(),
-  disclaimer: z.string().optional(),
   isActive: z.boolean(),
 });
 
@@ -131,7 +129,6 @@ export default function EditLoanOfficerPage() {
           branchState: lo.branchState || "",
           branchZip: lo.branchZip || "",
           branchNmls: lo.branchNmls || "",
-          disclaimer: lo.disclaimer || "",
           isActive: lo.user.isActive,
         });
         setHeadshotUrl(lo.headshotUrl || null);
@@ -279,18 +276,6 @@ export default function EditLoanOfficerPage() {
           </CardHeader>
           <CardContent className="p-5">
             <HeadshotDropzone value={headshotUrl} onChange={setHeadshotUrl} />
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200">
-          <CardHeader className="pb-3 border-b border-slate-100">
-            <CardTitle className="text-sm font-semibold text-slate-700">Disclaimer Text</CardTitle>
-          </CardHeader>
-          <CardContent className="p-5">
-            <Textarea
-              className="min-h-[100px] resize-none text-xs"
-              {...register("disclaimer")}
-            />
           </CardContent>
         </Card>
 

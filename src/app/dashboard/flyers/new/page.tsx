@@ -10,11 +10,9 @@ import {
   Upload,
   X,
   Loader2,
-  Search,
   Plus,
   Minus,
   Check,
-  RefreshCw,
   QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,23 +27,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, calculateMonthlyPI, LOAN_TYPES, getMissingScenarioFields } from "@/lib/utils";
 import { FLYER_TEMPLATES } from "@/types";
 import { US_STATES } from "@/lib/us-states";
 import type {
   Realtor,
   PropertyData,
   LoanScenario,
-  MLSSearchResult,
-  OptimalBlueProduct,
 } from "@/types";
 
 function StepIndicator({ currentStep, steps }: { currentStep: number; steps: string[] }) {
@@ -162,53 +150,7 @@ function PropertyStep({
   data: Partial<PropertyData>;
   onChange: (d: Partial<PropertyData>) => void;
 }) {
-  const [mlsQuery, setMlsQuery] = useState("");
-  const [mlsResults, setMlsResults] = useState<MLSSearchResult[]>([]);
-  const [mlsLoading, setMlsLoading] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
-
-  const searchMLS = async () => {
-    if (!mlsQuery.trim()) return;
-    setMlsLoading(true);
-    try {
-      const res = await fetch(`/api/mls/search?q=${encodeURIComponent(mlsQuery)}`);
-      if (!res.ok) throw new Error();
-      setMlsResults(await res.json());
-    } catch {
-      toast.error("MLS search failed");
-    } finally {
-      setMlsLoading(false);
-    }
-  };
-
-  const selectMLSResult = async (result: MLSSearchResult) => {
-    try {
-      const res = await fetch(`/api/mls/${result.mlsId}`);
-      if (!res.ok) throw new Error();
-      const propertyData: PropertyData = await res.json();
-      onChange(propertyData);
-      setMlsResults([]);
-      setMlsQuery("");
-      toast.success("Property data imported from MLS");
-    } catch {
-      // Fallback to basic data from search result
-      onChange({
-        address: result.address,
-        city: result.city,
-        state: result.state,
-        zipCode: result.zipCode,
-        price: result.price,
-        bedrooms: result.bedrooms,
-        bathrooms: result.bathrooms,
-        squareFeet: result.squareFeet,
-        photos: result.photos,
-        mlsNumber: result.mlsId,
-      });
-      setMlsResults([]);
-      setMlsQuery("");
-      toast.success("Property data imported from MLS");
-    }
-  };
 
   const onPhotoDrop = useCallback(
     async (files: File[]) => {
@@ -276,48 +218,7 @@ function PropertyStep({
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-bold text-slate-900 mb-1">Property information</h2>
-        <p className="text-sm text-slate-500">Search MLS or enter details manually.</p>
-      </div>
-
-      {/* MLS Search */}
-      <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-        <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">MLS Lookup</p>
-        <div className="flex gap-2">
-          <Input
-            className="h-9"
-            placeholder="Search by address, MLS#, or city…"
-            value={mlsQuery}
-            onChange={(e) => setMlsQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && searchMLS()}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-9 shrink-0"
-            onClick={searchMLS}
-            disabled={mlsLoading}
-          >
-            {mlsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-          </Button>
-        </div>
-        {mlsResults.length > 0 && (
-          <div className="mt-2 border border-slate-200 rounded-lg bg-white shadow-sm overflow-hidden">
-            {mlsResults.slice(0, 6).map((r) => (
-              <button
-                key={r.mlsId}
-                type="button"
-                className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-slate-100 last:border-0 transition-colors"
-                onClick={() => selectMLSResult(r)}
-              >
-                <p className="text-sm font-medium text-slate-900">{r.address}, {r.city}, {r.state}</p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {formatCurrency(r.price)} · {r.bedrooms}bd {r.bathrooms}ba · MLS# {r.mlsId}
-                </p>
-              </button>
-            ))}
-          </div>
-        )}
+        <p className="text-sm text-slate-500">Enter the property details and upload photos.</p>
       </div>
 
       {/* Manual fields */}
@@ -337,6 +238,11 @@ function PropertyStep({
         {field("yearBuilt", "Year built", "number")}
         {field("garage", "Garage", "text", "2 Car Attached")}
         {field("lotSize", "Lot size")}
+        {field("propertyType", "Property type (optional)", "text", "Single Family")}
+        {field("propertyUse", "Property use (optional)", "text", "Primary Residence")}
+        {field("stories", "# of stories (optional)", "number")}
+        {field("units", "# of units (optional)", "number")}
+        {field("mlsNumber", "MLS # (optional)", "text", "e.g. 36749718")}
       </div>
 
       {/* Open house */}
@@ -514,120 +420,12 @@ const emptyScenario = (): Partial<LoanScenario> => ({
   taxesInsurance: undefined,
   hoaFee: undefined,
   miPayment: undefined,
+  upfrontMip: undefined,
+  monthlyMip: undefined,
+  vaFundingFee: undefined,
+  usdaGuaranteeFee: undefined,
+  usdaAnnualFee: undefined,
 });
-
-function OBPricingDialog({
-  onSelect,
-  propertyState,
-  propertyZip,
-}: {
-  onSelect: (product: OptimalBlueProduct, purchasePrice: number, downPct: number) => void;
-  propertyState: string;
-  propertyZip: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<OptimalBlueProduct[]>([]);
-  const [form, setForm] = useState({
-    purchasePrice: "",
-    downPaymentPercent: "20",
-    creditScore: "740",
-    state: propertyState,
-    zipCode: propertyZip,
-  });
-
-  const fetchPricing = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/optimal-blue/pricing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          purchasePrice: Number(form.purchasePrice),
-          downPaymentPercent: Number(form.downPaymentPercent),
-          creditScore: Number(form.creditScore),
-          state: form.state,
-          zipCode: form.zipCode,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      setResults(await res.json());
-    } catch {
-      toast.error("Failed to fetch pricing — check Optimal Blue credentials");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const f = (key: keyof typeof form, label: string, type = "text") => (
-    <div>
-      <Label className="text-xs font-medium text-slate-600 mb-1 block">{label}</Label>
-      <Input
-        type={type}
-        className="h-8 text-sm"
-        value={form[key]}
-        onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))}
-      />
-    </div>
-  );
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button type="button" variant="outline" size="sm" className="h-8 text-xs gap-1.5">
-          <RefreshCw className="w-3 h-3" /> Fetch from Optimal Blue
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <DialogTitle className="text-base">Optimal Blue Pricing</DialogTitle>
-        </DialogHeader>
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {f("purchasePrice", "Purchase price", "number")}
-          {f("downPaymentPercent", "Down payment %", "number")}
-          {f("creditScore", "Credit score", "number")}
-          {f("state", "State")}
-          {f("zipCode", "Zip code")}
-        </div>
-        <Button
-          type="button"
-          className="w-full mb-4 text-white"
-          style={{ backgroundColor: "#6633cc" }}
-          onClick={fetchPricing}
-          disabled={loading}
-        >
-          {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Fetching…</> : "Get Rates"}
-        </Button>
-        {results.length > 0 && (
-          <div className="max-h-64 overflow-y-auto space-y-2">
-            {results.map((product, idx) => (
-              <button
-                key={idx}
-                type="button"
-                className="w-full text-left p-3 rounded-lg border border-slate-200 hover:bg-blue-50 hover:border-blue-200 transition-colors"
-                onClick={() => {
-                  onSelect(product, Number(form.purchasePrice), Number(form.downPaymentPercent));
-                  setOpen(false);
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{product.productName}</p>
-                    <p className="text-xs text-slate-500">{product.loanType} · {product.term}yr</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-blue-900">{product.rate.toFixed(3)}%</p>
-                    <p className="text-xs text-slate-500">APR {product.apr.toFixed(3)}%</p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function FinancingStep({
   scenarios,
@@ -643,15 +441,59 @@ function FinancingStep({
   const update = (idx: number, patch: Partial<LoanScenario>) => {
     const updated = [...scenarios];
     updated[idx] = { ...updated[idx], ...patch };
-    // Auto-calc loan amount
+    const s = updated[idx];
+
+    // Auto-calc loan amount from purchase price + down payment %
     if (patch.purchasePrice !== undefined || patch.downPaymentPercent !== undefined) {
-      const price = (patch.purchasePrice ?? updated[idx].purchasePrice) as number;
-      const pct = (patch.downPaymentPercent ?? updated[idx].downPaymentPercent) as number;
+      const price = s.purchasePrice as number;
+      const pct = s.downPaymentPercent as number;
       if (price && pct !== undefined) {
-        updated[idx].downPaymentAmount = Math.round((price * pct) / 100);
-        updated[idx].loanAmount = Math.round(price - updated[idx].downPaymentAmount!);
+        s.downPaymentAmount = Math.round((price * pct) / 100);
+        s.loanAmount = Math.round(price - s.downPaymentAmount!);
       }
     }
+
+    // Auto-calc P&I and total monthly payment whenever a driving field changes
+    if (
+      patch.purchasePrice !== undefined ||
+      patch.downPaymentPercent !== undefined ||
+      patch.loanAmount !== undefined ||
+      patch.interestRate !== undefined ||
+      patch.term !== undefined ||
+      patch.taxesInsurance !== undefined ||
+      patch.miPayment !== undefined ||
+      patch.hoaFee !== undefined ||
+      patch.monthlyMip !== undefined ||
+      patch.usdaAnnualFee !== undefined
+    ) {
+      if (s.loanAmount && s.interestRate !== undefined && s.term) {
+        s.piPayment = Math.round(calculateMonthlyPI(s.loanAmount, s.interestRate, s.term));
+        s.monthlyPayment = Math.round(
+          s.piPayment +
+            (s.taxesInsurance || 0) +
+            (s.miPayment || 0) +
+            (s.hoaFee || 0) +
+            (s.monthlyMip || 0) +
+            (s.usdaAnnualFee || 0)
+        );
+      }
+    }
+
+    // Clear loan-type-specific fields that no longer apply when the type changes
+    if (patch.loanType !== undefined) {
+      if (patch.loanType !== "FHA") {
+        s.upfrontMip = undefined;
+        s.monthlyMip = undefined;
+      }
+      if (patch.loanType !== "VA") {
+        s.vaFundingFee = undefined;
+      }
+      if (patch.loanType !== "USDA") {
+        s.usdaGuaranteeFee = undefined;
+        s.usdaAnnualFee = undefined;
+      }
+    }
+
     onChange(updated);
   };
 
@@ -663,34 +505,18 @@ function FinancingStep({
     onChange(scenarios.filter((_, i) => i !== idx));
   };
 
-  const applyOBProduct = (
-    idx: number,
-    product: OptimalBlueProduct,
-    purchasePrice: number,
-    downPct: number
-  ) => {
-    update(idx, {
-      loanType: product.loanType,
-      term: product.term,
-      interestRate: product.rate,
-      apr: product.apr,
-      piPayment: product.monthlyPayment,
-      monthlyPayment: product.monthlyPayment,
-      purchasePrice,
-      downPaymentPercent: downPct,
-      label: `${product.term}yr ${product.loanType}`,
-    });
-  };
-
   const scenarioField = (
     idx: number,
     key: keyof LoanScenario,
     label: string,
     type = "text",
-    placeholder = ""
+    placeholder = "",
+    required = false
   ) => (
     <div>
-      <Label className="text-xs font-medium text-slate-600 mb-1 block">{label}</Label>
+      <Label className="text-xs font-medium text-slate-600 mb-1 block">
+        {label} {required && <span className="text-red-500">*</span>}
+      </Label>
       <Input
         type={type}
         className="h-8 text-sm"
@@ -735,38 +561,79 @@ function FinancingStep({
               <span className="text-sm font-semibold text-slate-700">
                 Scenario {idx + 1}
               </span>
-              <div className="flex gap-2">
-                <OBPricingDialog
-                  propertyState={propertyData.state || ""}
-                  propertyZip={propertyData.zipCode || ""}
-                  onSelect={(product, price, downPct) => applyOBProduct(idx, product, price, downPct)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 hover:bg-red-50"
-                  onClick={() => removeScenario(idx)}
-                >
-                  <Minus className="w-3.5 h-3.5 text-red-500" />
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:bg-red-50"
+                onClick={() => removeScenario(idx)}
+              >
+                <Minus className="w-3.5 h-3.5 text-red-500" />
+              </Button>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {scenarioField(idx, "label", "Label", "text", "30yr Conventional")}
-              {scenarioField(idx, "loanType", "Loan type", "text", "Conventional")}
-              {scenarioField(idx, "term", "Term (years)", "number", "30")}
-              {scenarioField(idx, "purchasePrice", "Purchase price", "number")}
-              {scenarioField(idx, "downPaymentPercent", "Down payment %", "number", "20")}
-              {scenarioField(idx, "loanAmount", "Loan amount", "number")}
-              {scenarioField(idx, "interestRate", "Interest rate", "number", "6.875")}
-              {scenarioField(idx, "apr", "APR", "number", "7.12")}
+              {scenarioField(idx, "label", "Label", "text", "30yr Conventional", true)}
+              <div>
+                <Label className="text-xs font-medium text-slate-600 mb-1 block">
+                  Loan type <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={(s.loanType as string) || undefined}
+                  onValueChange={(v) => v && update(idx, { loanType: v })}
+                >
+                  <SelectTrigger className="h-8 text-sm w-full">
+                    <SelectValue placeholder="Select…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LOAN_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {scenarioField(idx, "term", "Term (years)", "number", "30", true)}
+              {scenarioField(idx, "purchasePrice", "Purchase price", "number", "", true)}
+              {scenarioField(idx, "downPaymentPercent", "Down payment %", "number", "20", true)}
+              {scenarioField(idx, "loanAmount", "Loan amount", "number", "", true)}
+              {scenarioField(idx, "interestRate", "Interest rate", "number", "6.875", true)}
+              {scenarioField(idx, "apr", "APR", "number", "7.12", true)}
               {scenarioField(idx, "piPayment", "P&I payment", "number")}
-              {scenarioField(idx, "taxesInsurance", "Taxes & ins./mo", "number")}
-              {scenarioField(idx, "miPayment", "MI/mo", "number")}
+              {scenarioField(idx, "taxesInsurance", "Taxes & ins./mo", "number", "", true)}
+              {scenarioField(
+                idx,
+                "miPayment",
+                "MI/mo",
+                "number",
+                "",
+                (s.loanType === "Conventional" || s.loanType === "Jumbo") && (s.downPaymentPercent ?? 0) < 20
+              )}
               {scenarioField(idx, "hoaFee", "HOA/mo", "number")}
+              {s.loanType === "FHA" && (
+                <>
+                  {scenarioField(idx, "upfrontMip", "Upfront MIP", "number", "", true)}
+                  {scenarioField(idx, "monthlyMip", "Monthly MIP", "number", "", true)}
+                </>
+              )}
+              {s.loanType === "VA" && scenarioField(idx, "vaFundingFee", "VA Funding Fee", "number", "", true)}
+              {s.loanType === "USDA" && (
+                <>
+                  {scenarioField(idx, "usdaGuaranteeFee", "Upfront Guarantee Fee", "number", "", true)}
+                  {scenarioField(idx, "usdaAnnualFee", "Annual Fee/mo", "number", "", true)}
+                </>
+              )}
             </div>
+            <p className="text-xs text-slate-400 mt-3">
+              P&I and total monthly payment are calculated automatically from purchase price, down payment, rate, and term — edit them directly to override.
+            </p>
+            {(() => {
+              const missing = getMissingScenarioFields(s);
+              return missing.length > 0 ? (
+                <p className="text-xs text-amber-600 mt-2">
+                  Still needed: {missing.join(", ")}
+                </p>
+              ) : null;
+            })()}
           </div>
         ))}
       </div>
@@ -928,6 +795,9 @@ export default function NewFlyerPage() {
   const canAdvance = () => {
     if (step === 0) return !!templateId;
     if (step === 1) return !!(propertyData.address && propertyData.city);
+    if (step === 3 && hasFinancing) {
+      return scenarios.every((s) => getMissingScenarioFields(s).length === 0);
+    }
     // Additional Details step: require distributionState before saving
     return true;
   };

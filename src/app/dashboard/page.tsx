@@ -236,6 +236,10 @@ export default async function DashboardPage() {
                             flyerId={flyer.id}
                             flyerTitle={flyer.title}
                             shareToken={flyer.shareToken}
+                            isLocked={
+                              ((flyer.loanScenarios as any[] | null)?.length ?? 0) > 0 &&
+                              flyer.approvalStatus !== "APPROVED"
+                            }
                           />
                           <DeleteFlyerButton flyerId={flyer.id} />
                         </div>

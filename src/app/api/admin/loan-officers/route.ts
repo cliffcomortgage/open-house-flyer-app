@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import bcrypt from "bcryptjs";
+import { sendLoanOfficerWelcomeEmail } from "@/lib/email";
 
 async function requireAdmin() {
   const session = await auth();
@@ -16,12 +17,22 @@ export async function GET() {
 
   const loanOfficers = await prisma.loanOfficer.findMany({
     include: {
-      user: { select: { email: true, isActive: true, role: true } },
+      user: { select: { email: true, isActive: true, role: true, password: true } },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(loanOfficers);
+  const withHasPassword = loanOfficers.map((lo) => ({
+    ...lo,
+    user: {
+      email: lo.user.email,
+      isActive: lo.user.isActive,
+      role: lo.user.role,
+      hasPassword: lo.user.password !== null,
+    },
+  }));
+
+  return NextResponse.json(withHasPassword);
 }
 
 function assembleBranchAddress(street?: string, suite?: string, city?: string, state?: string, zip?: string): string | null {
@@ -40,15 +51,15 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const {
-    email, password, firstName, lastName, title,
+    email, firstName, lastName, title,
     nmlsNumber, officePhone, cellPhone, website,
     branchStreet, branchSuite, branchCity, branchState, branchZip,
     branchNmls, headshotUrl,
   } = body;
 
-  if (!email || !password || !firstName || !lastName || !nmlsNumber) {
+  if (!email || !firstName || !lastName || !nmlsNumber) {
     return NextResponse.json(
-      { error: "email, password, firstName, lastName, and nmlsNumber are required" },
+      { error: "email, firstName, lastName, and nmlsNumber are required" },
       { status: 400 }
     );
   }
@@ -58,7 +69,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Email already in use" }, { status: 409 });
   }
 
-  const hashedPassword = await bcrypt.hash(password, 12);
+  const passwordSetToken = randomBytes(32).toString("hex");
+  const passwordSetExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const branchAddress = assembleBranchAddress(branchStreet, branchSuite, branchCity, branchState, branchZip);
 
   try {
@@ -66,9 +78,11 @@ export async function POST(req: NextRequest) {
       const user = await tx.user.create({
         data: {
           email,
-          password: hashedPassword,
+          password: null,
           role: "LO",
           isActive: true,
+          passwordSetToken,
+          passwordSetExpiresAt,
         },
       });
 
@@ -99,6 +113,17 @@ export async function POST(req: NextRequest) {
 
       return lo;
     });
+
+    try {
+      await sendLoanOfficerWelcomeEmail({
+        toEmail: email,
+        loName: `${firstName} ${lastName}`,
+        setPasswordToken: passwordSetToken,
+        baseUrl: process.env.NEXTAUTH_URL || req.nextUrl.origin,
+      });
+    } catch (err) {
+      console.error("Failed to send loan officer welcome email:", err);
+    }
 
     return NextResponse.json(result, { status: 201 });
   } catch (err: any) {

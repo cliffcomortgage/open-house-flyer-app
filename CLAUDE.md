@@ -4,7 +4,7 @@ Full-stack Next.js app for Cliffco Mortgage Bank loan officers to generate co-br
 
 ## What it does
 - LOs log in and create printable/shareable flyers for open house events
-- Flyers pull live MLS listings (SimplyRETS) and rate scenarios (Optimal Blue)
+- Property info, photos, and loan scenario rates are entered manually (no MLS or Optimal Blue integration in phase 1); monthly P&I is auto-calculated from the entered rate/term
 - Four flyer templates, each co-branded with the realtor's headshot, logo, and colors
 - PDFs generated server-side; shareable public link via unique token
 - Admin panel for managing LO accounts and company settings

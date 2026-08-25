@@ -55,7 +55,7 @@ export async function PUT(
     firstName, lastName, title, nmlsNumber, email,
     officePhone, cellPhone, website,
     branchStreet, branchSuite, branchCity, branchState, branchZip,
-    branchNmls, disclaimer, headshotUrl, isActive,
+    branchNmls, headshotUrl, isActive,
   } = body;
 
   const branchAddress = assembleBranchAddress(branchStreet, branchSuite, branchCity, branchState, branchZip);
@@ -79,7 +79,6 @@ export async function PUT(
         branchState: branchState !== undefined ? (branchState || null) : lo.branchState,
         branchZip: branchZip !== undefined ? (branchZip || null) : lo.branchZip,
         branchNmls: branchNmls !== undefined ? (branchNmls || null) : lo.branchNmls,
-        disclaimer: disclaimer !== undefined ? (disclaimer || null) : lo.disclaimer,
         headshotUrl: headshotUrl !== undefined ? (headshotUrl || null) : lo.headshotUrl,
       },
       include: { user: { select: { email: true, isActive: true, role: true } } },

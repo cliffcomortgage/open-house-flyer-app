@@ -2,6 +2,7 @@ import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Shield, UserCog, Settings, ChevronRight, ClipboardList } from "lucide-react";
+import { prisma } from "@/lib/db";
 
 export default async function AdminLayout({
   children,
@@ -11,6 +12,8 @@ export default async function AdminLayout({
   const session = await auth();
   if (!session?.user) redirect("/login");
   if ((session.user as any).role !== "ADMIN") redirect("/dashboard");
+
+  const pendingReviewCount = await prisma.flyer.count({ where: { approvalStatus: "PENDING" } });
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -53,6 +56,11 @@ export default async function AdminLayout({
           >
             <ClipboardList className="w-3 h-3" />
             Compliance
+            {pendingReviewCount > 0 && (
+              <span className="ml-1 min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">
+                {pendingReviewCount}
+              </span>
+            )}
           </Link>
         </nav>
         <div className="ml-auto flex items-center gap-4">

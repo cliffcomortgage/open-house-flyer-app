@@ -8,6 +8,7 @@ interface TemplateGalleryGridProps {
   realtor: Realtor | null;
   company: CompanySettings;
   qrCodeDataUrl: string | null;
+  distributionState?: string | null;
 }
 
 export function TemplateGalleryGrid({
@@ -16,6 +17,7 @@ export function TemplateGalleryGrid({
   realtor,
   company,
   qrCodeDataUrl,
+  distributionState,
 }: TemplateGalleryGridProps) {
   const primaryColor = realtor?.brandPrimary || company.primaryColor || "#6633cc";
   const photos = propertyData.photos || [];
@@ -41,7 +43,16 @@ export function TemplateGalleryGrid({
     propertyData.yearBuilt ? { label: "Year Built", value: propertyData.yearBuilt } : null,
     propertyData.lotSize ? { label: "Lot Size", value: propertyData.lotSize } : null,
     propertyData.garage ? { label: "Garage", value: propertyData.garage } : null,
+    propertyData.stories ? { label: "Stories", value: propertyData.stories } : null,
+    propertyData.units ? { label: "Units", value: propertyData.units } : null,
   ].filter(Boolean);
+
+  const cityStateZipLine = [propertyData.city, propertyData.state, propertyData.zipCode]
+    .filter(Boolean)
+    .join(", ");
+  const subAddressLine = [cityStateZipLine, propertyData.propertyType, propertyData.propertyUse]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div
@@ -51,7 +62,7 @@ export function TemplateGalleryGrid({
         display: "flex",
         flexDirection: "column",
         background: "#ffffff",
-        fontFamily: "Arial, 'Helvetica Neue', Helvetica, sans-serif",
+        fontFamily: 'var(--font-sans), "Segoe UI", Arial, sans-serif',
         overflow: "hidden",
       }}
     >
@@ -115,20 +126,9 @@ export function TemplateGalleryGrid({
           {propertyData.address}
         </div>
         <div style={{ fontSize: "13px", color: "#64748b", marginTop: "2px" }}>
-          {[propertyData.city, propertyData.state, propertyData.zipCode]
-            .filter(Boolean)
-            .join(", ")}
+          {subAddressLine}
         </div>
       </div>
-
-      {/* Thin primary accent rule */}
-      <div
-        style={{
-          height: "2px",
-          background: `linear-gradient(90deg, ${primaryColor} 0%, ${primaryColor}44 100%)`,
-          flexShrink: 0,
-        }}
-      />
 
       {/* Photo grid — 2×2, thin 2px gaps, full width */}
       <div
@@ -139,7 +139,7 @@ export function TemplateGalleryGrid({
           gap: "2px",
           height: "490px",
           flexShrink: 0,
-          marginTop: "10px",
+          marginTop: "18px",
         }}
       >
         {[0, 1, 2, 3].map((idx) => (
@@ -222,12 +222,21 @@ export function TemplateGalleryGrid({
         </div>
       )}
 
-      {/* Description — yields space to the footer/disclaimer below, which must never be clipped */}
+      {/* Description */}
       {propertyData.description && (
         <div style={{ padding: "16px 36px 0", flex: 1, minHeight: 0, overflow: "hidden" }}>
-          <div style={{ fontSize: "11px", color: "#64748b", lineHeight: "1.72" }}>
-            {propertyData.description.slice(0, 200)}
-            {propertyData.description.length > 200 ? "…" : ""}
+          <div
+            style={{
+              fontSize: "11px",
+              color: "#64748b",
+              lineHeight: "1.72",
+              display: "-webkit-box",
+              WebkitLineClamp: 5,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {propertyData.description}
           </div>
         </div>
       )}
@@ -239,6 +248,7 @@ export function TemplateGalleryGrid({
         realtor={realtor}
         company={company}
         qrCodeDataUrl={qrCodeDataUrl}
+        distributionState={distributionState}
       />
     </div>
   );

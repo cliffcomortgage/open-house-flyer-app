@@ -13,6 +13,9 @@ import {
   FileText,
   Filter,
   Check,
+  Clock,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +53,12 @@ const templateLabels: Record<string, string> = {
   "market-leader": "Market Leader",
 };
 
+const APPROVAL_BADGE: Record<string, { label: string; className: string; icon: React.ElementType }> = {
+  PENDING: { label: "Pending review", className: "bg-amber-500 text-white border-0", icon: Clock },
+  APPROVED: { label: "Approved", className: "bg-emerald-500 text-white border-0", icon: ShieldCheck },
+  REJECTED: { label: "Changes requested", className: "bg-red-500 text-white border-0", icon: ShieldAlert },
+};
+
 function FlyerCard({
   flyer,
   onDelete,
@@ -62,12 +71,19 @@ function FlyerCard({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const propertyData = flyer.propertyData as any;
   const accentColor = templateColors[flyer.templateId] || "#6633cc";
+  const hasScenarios = ((flyer.loanScenarios as any[] | null)?.length ?? 0) > 0;
+  const isLocked = hasScenarios && flyer.approvalStatus !== "APPROVED";
+  const approvalBadge = hasScenarios ? APPROVAL_BADGE[flyer.approvalStatus] : null;
+  const lockedTitle = "Pending compliance approval";
 
   const handleDownloadPDF = async () => {
     setDownloading(true);
     try {
       const res = await fetch(`/api/flyers/${flyer.id}/pdf`, { method: "POST" });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "PDF generation failed");
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -75,8 +91,8 @@ function FlyerCard({
       a.download = `${flyer.title || "flyer"}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch {
-      toast.error("PDF generation failed");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "PDF generation failed");
     } finally {
       setDownloading(false);
     }
@@ -118,8 +134,8 @@ function FlyerCard({
             {templateLabels[flyer.templateId] || flyer.templateId}
           </span>
         </div>
-        {/* Status badge */}
-        <div className="absolute top-2 right-2">
+        {/* Status badges */}
+        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
           <Badge
             className={
               flyer.status === "SAVED"
@@ -129,6 +145,12 @@ function FlyerCard({
           >
             {flyer.status === "SAVED" ? "Saved" : "Draft"}
           </Badge>
+          {approvalBadge && (
+            <Badge className={`${approvalBadge.className} gap-1`}>
+              <approvalBadge.icon className="w-3 h-3" />
+              {approvalBadge.label}
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -166,9 +188,9 @@ function FlyerCard({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            title="Download PDF"
+            title={isLocked ? lockedTitle : "Download PDF"}
             onClick={handleDownloadPDF}
-            disabled={downloading}
+            disabled={downloading || isLocked}
           >
             <Download className="w-3.5 h-3.5 text-slate-500" />
           </Button>
@@ -177,7 +199,8 @@ function FlyerCard({
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              title="Copy share link"
+              disabled={isLocked}
+              title={isLocked ? lockedTitle : "Copy share link"}
               onClick={handleCopyShare}
             >
               {copied ? (

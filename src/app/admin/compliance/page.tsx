@@ -1,14 +1,18 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
-  Download,
   Loader2,
   Filter,
   FileText,
   User,
   Archive,
+  ShieldCheck,
+  Clock,
+  ShieldAlert,
+  ClipboardCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +32,8 @@ interface ComplianceFlyer {
   templateId: string;
   status: string;
   distributionState: string | null;
+  approvalStatus: "NOT_SUBMITTED" | "PENDING" | "APPROVED" | "REJECTED";
+  loanScenarios: unknown[] | null;
   createdAt: string;
   updatedAt: string;
   propertyData: {
@@ -52,6 +58,12 @@ interface ComplianceFlyer {
   } | null;
 }
 
+const APPROVAL_BADGE: Record<string, { label: string; className: string; icon: React.ElementType }> = {
+  PENDING: { label: "Pending review", className: "bg-amber-50 text-amber-700 border-amber-100", icon: Clock },
+  APPROVED: { label: "Approved", className: "bg-emerald-50 text-emerald-700 border-emerald-100", icon: ShieldCheck },
+  REJECTED: { label: "Changes requested", className: "bg-red-50 text-red-700 border-red-100", icon: ShieldAlert },
+};
+
 const templateLabels: Record<string, string> = {
   "modern-minimal": "Modern Minimal",
   "gallery-grid": "Gallery Grid",
@@ -64,8 +76,14 @@ export default function CompliancePage() {
   const [loading, setLoading] = useState(true);
   const [filterState, setFilterState] = useState("ALL");
   const [filterLO, setFilterLO] = useState("ALL");
+  const [pendingOnly, setPendingOnly] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
+
+  const pendingCount = useMemo(
+    () => flyers.filter((f) => f.approvalStatus === "PENDING").length,
+    [flyers]
+  );
 
   useEffect(() => {
     fetch("/api/admin/compliance")
@@ -91,8 +109,9 @@ export default function CompliancePage() {
   const filtered = useMemo(() => flyers.filter((f) => {
     if (filterState !== "ALL" && f.distributionState !== filterState) return false;
     if (filterLO !== "ALL" && f.loanOfficer.id !== filterLO) return false;
+    if (pendingOnly && f.approvalStatus !== "PENDING") return false;
     return true;
-  }), [flyers, filterState, filterLO]);
+  }), [flyers, filterState, filterLO, pendingOnly]);
 
   const allFilteredSelected = filtered.length > 0 && filtered.every((f) => selected.has(f.id));
 
@@ -163,19 +182,32 @@ export default function CompliancePage() {
             All flyers created across loan officers, with distribution state tracking.
           </p>
         </div>
-        <Button
-          onClick={handleExport}
-          disabled={selected.size === 0 || exporting}
-          style={{ backgroundColor: "#6633cc" }}
-          className="text-white gap-2"
-        >
-          {exporting ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Archive className="w-4 h-4" />
+        <div className="flex gap-2">
+          {pendingCount > 0 && (
+            <Button
+              variant={pendingOnly ? "default" : "outline"}
+              onClick={() => setPendingOnly((v) => !v)}
+              className={pendingOnly ? "text-white gap-2" : "gap-2"}
+              style={pendingOnly ? { backgroundColor: "#d97706" } : undefined}
+            >
+              <Clock className="w-4 h-4" />
+              {pendingCount} Pending Review
+            </Button>
           )}
-          Export ZIP ({selected.size} selected)
-        </Button>
+          <Button
+            onClick={handleExport}
+            disabled={selected.size === 0 || exporting}
+            style={{ backgroundColor: "#6633cc" }}
+            className="text-white gap-2"
+          >
+            {exporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Archive className="w-4 h-4" />
+            )}
+            Export ZIP ({selected.size} selected)
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -257,9 +289,13 @@ export default function CompliancePage() {
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                     Status
                   </th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    Approval
+                  </th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden xl:table-cell">
                     Created
                   </th>
+                  <th className="w-10 px-4 py-3" />
                 </tr>
               </thead>
               <tbody>
@@ -334,12 +370,38 @@ export default function CompliancePage() {
                           {flyer.status === "SAVED" ? "Saved" : "Draft"}
                         </Badge>
                       </td>
+                      <td className="px-4 py-3">
+                        {(flyer.loanScenarios?.length ?? 0) > 0 ? (
+                          (() => {
+                            const b = APPROVAL_BADGE[flyer.approvalStatus];
+                            return b ? (
+                              <Badge variant="secondary" className={`gap-1 ${b.className}`}>
+                                <b.icon className="w-3 h-3" />
+                                {b.label}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-400 italic text-xs">Not submitted</span>
+                            );
+                          })()
+                        ) : (
+                          <span className="text-slate-300 text-xs">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-slate-500 text-xs hidden xl:table-cell tabular-nums">
                         {new Date(flyer.createdAt).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
                           year: "numeric",
                         })}
+                      </td>
+                      <td className="px-4 py-3">
+                        {(flyer.loanScenarios?.length ?? 0) > 0 && (
+                          <Button asChild variant="ghost" size="icon" className="h-8 w-8" title="Review loan scenarios">
+                            <Link href={`/admin/compliance/review/${flyer.id}`}>
+                              <ClipboardCheck className="w-3.5 h-3.5 text-slate-500" />
+                            </Link>
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   );
