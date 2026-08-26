@@ -17,7 +17,7 @@ export const RE_BRANDS: REBrand[] = [
     name: "Coldwell Banker",
     aliases: ["coldwell banker", "coldwell"],
     primaryColor: "#012169",
-    secondaryColor: "#FFFFFF",
+    secondaryColor: "#F0F5FB",
   },
   {
     name: "Compass",
