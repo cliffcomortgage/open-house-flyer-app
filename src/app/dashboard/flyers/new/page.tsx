@@ -156,6 +156,7 @@ function PropertyStep({
     async (files: File[]) => {
       setPhotoUploading(true);
       const uploaded: string[] = [];
+      let failed = 0;
       for (const file of files) {
         try {
           const formData = new FormData();
@@ -165,10 +166,15 @@ function PropertyStep({
           if (res.ok) {
             const { publicUrl } = await res.json();
             uploaded.push(publicUrl);
+          } else {
+            failed++;
           }
         } catch {
-          // skip failed
+          failed++;
         }
+      }
+      if (failed) {
+        toast.error(`${failed} photo${failed > 1 ? "s" : ""} failed to upload`);
       }
       if (uploaded.length) {
         onChange({ photos: [...(data.photos || []), ...uploaded] });
