@@ -711,7 +711,7 @@ function PreviewStep({
         <p className="text-xs text-slate-500 mb-3">
           Select the state where this flyer will be distributed. Required for compliance records.
         </p>
-        <Select value={distributionState} onValueChange={setDistributionState}>
+        <Select value={distributionState} onValueChange={(v) => setDistributionState(v ?? "")}>
           <SelectTrigger className="h-9">
             <SelectValue placeholder="Select a state…" />
           </SelectTrigger>
