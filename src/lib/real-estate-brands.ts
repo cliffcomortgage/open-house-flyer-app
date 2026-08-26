@@ -5,18 +5,18 @@ export const RE_BRANDS: REBrand[] = [
     name: "Keller Williams",
     aliases: ["keller williams", "kw realty", "kw"],
     primaryColor: "#B40101",
-    secondaryColor: "#000000",
+    secondaryColor: "#707372",
   },
   {
     name: "RE/MAX",
     aliases: ["remax", "re/max", "re max"],
-    primaryColor: "#DC143C",
+    primaryColor: "#DC1C2E",
     secondaryColor: "#003DA5",
   },
   {
     name: "Coldwell Banker",
     aliases: ["coldwell banker", "coldwell"],
-    primaryColor: "#003087",
+    primaryColor: "#003399",
     secondaryColor: "#FFFFFF",
   },
   {
@@ -28,26 +28,26 @@ export const RE_BRANDS: REBrand[] = [
   {
     name: "eXp Realty",
     aliases: ["exp realty", "exp realty llc", "exp"],
-    primaryColor: "#004C8C",
+    primaryColor: "#19469D",
     secondaryColor: "#00A3E0",
   },
   {
     name: "Century 21",
     aliases: ["century 21", "c21"],
-    primaryColor: "#B59A5A",
+    primaryColor: "#EAAA00",
     secondaryColor: "#000000",
   },
   {
     name: "Berkshire Hathaway HomeServices",
     aliases: ["berkshire hathaway", "bhhs", "berkshire hathaway homeservices"],
-    primaryColor: "#4B0082",
-    secondaryColor: "#C4A44C",
+    primaryColor: "#552448",
+    secondaryColor: "#E7E0C5",
   },
   {
     name: "Sotheby's International Realty",
     aliases: ["sotheby's", "sothebys", "sotheby", "sotheby's international"],
-    primaryColor: "#002B5C",
-    secondaryColor: "#C4A44C",
+    primaryColor: "#0C2340",
+    secondaryColor: "#999999",
   },
   {
     name: "Douglas Elliman",
@@ -59,19 +59,22 @@ export const RE_BRANDS: REBrand[] = [
     name: "Corcoran",
     aliases: ["corcoran"],
     primaryColor: "#000000",
-    secondaryColor: "#FFFFFF",
+    secondaryColor: "#E06A78",
   },
   {
+    // Colors are a directional estimate (confirmed forest-green + gold since
+    // their Sept. 2025 rebrand) — exact hex not verified against an official
+    // source. Update once confirmed.
     name: "Howard Hanna",
     aliases: ["howard hanna", "hanna"],
-    primaryColor: "#CC0000",
-    secondaryColor: "#FFFFFF",
+    primaryColor: "#1A4D2E",
+    secondaryColor: "#C9A227",
   },
   {
     name: "Long & Foster",
     aliases: ["long & foster", "long and foster", "long foster"],
-    primaryColor: "#003087",
-    secondaryColor: "#CC0000",
+    primaryColor: "#041E3F",
+    secondaryColor: "#F15F41",
   },
   {
     name: "Weichert Realtors",
@@ -94,26 +97,8 @@ export const RE_BRANDS: REBrand[] = [
   {
     name: "Redfin",
     aliases: ["redfin"],
-    primaryColor: "#CC0033",
+    primaryColor: "#A02021",
     secondaryColor: "#FFFFFF",
-  },
-  {
-    name: "Engel & Völkers",
-    aliases: ["engel & volkers", "engel and volkers", "engel volkers"],
-    primaryColor: "#CC0000",
-    secondaryColor: "#000000",
-  },
-  {
-    name: "Brown Harris Stevens",
-    aliases: ["brown harris stevens", "bhs"],
-    primaryColor: "#000000",
-    secondaryColor: "#8B7355",
-  },
-  {
-    name: "Halstead",
-    aliases: ["halstead"],
-    primaryColor: "#000000",
-    secondaryColor: "#CC0000",
   },
 ];
 
