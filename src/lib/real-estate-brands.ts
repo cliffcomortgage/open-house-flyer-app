@@ -62,13 +62,10 @@ export const RE_BRANDS: REBrand[] = [
     secondaryColor: "#E06A78",
   },
   {
-    // Colors are a directional estimate (confirmed forest-green + gold since
-    // their Sept. 2025 rebrand) — exact hex not verified against an official
-    // source. Update once confirmed.
     name: "Howard Hanna",
     aliases: ["howard hanna", "hanna"],
-    primaryColor: "#1A4D2E",
-    secondaryColor: "#C9A227",
+    primaryColor: "#005A4E",
+    secondaryColor: "#B78126",
   },
   {
     name: "Long & Foster",
