@@ -15,15 +15,12 @@ function AlertDialogTrigger({
   ...props
 }: AlertDialogPrimitive.Trigger.Props & { asChild?: boolean }) {
   if (asChild && React.isValidElement(children)) {
-    const child = children as React.ReactElement<Record<string, unknown>>;
     return (
       <AlertDialogPrimitive.Trigger
         data-slot="alert-dialog-trigger"
-        render={React.cloneElement(child, { children: undefined })}
+        render={children as React.ReactElement<Record<string, unknown>>}
         {...props}
-      >
-        {child.props.children as React.ReactNode}
-      </AlertDialogPrimitive.Trigger>
+      />
     );
   }
   return (
