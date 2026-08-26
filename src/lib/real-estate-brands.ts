@@ -5,7 +5,7 @@ export const RE_BRANDS: REBrand[] = [
     name: "Keller Williams",
     aliases: ["keller williams", "kw realty", "kw"],
     primaryColor: "#B40101",
-    secondaryColor: "#707372",
+    secondaryColor: "#999999",
   },
   {
     name: "RE/MAX",
@@ -16,7 +16,7 @@ export const RE_BRANDS: REBrand[] = [
   {
     name: "Coldwell Banker",
     aliases: ["coldwell banker", "coldwell"],
-    primaryColor: "#003399",
+    primaryColor: "#012169",
     secondaryColor: "#FFFFFF",
   },
   {
@@ -28,8 +28,8 @@ export const RE_BRANDS: REBrand[] = [
   {
     name: "eXp Realty",
     aliases: ["exp realty", "exp realty llc", "exp"],
-    primaryColor: "#19469D",
-    secondaryColor: "#00A3E0",
+    primaryColor: "#506CAA",
+    secondaryColor: "#31303F",
   },
   {
     name: "Century 21",
@@ -40,8 +40,8 @@ export const RE_BRANDS: REBrand[] = [
   {
     name: "Berkshire Hathaway HomeServices",
     aliases: ["berkshire hathaway", "bhhs", "berkshire hathaway homeservices"],
-    primaryColor: "#552448",
-    secondaryColor: "#E7E0C5",
+    primaryColor: "#670038",
+    secondaryColor: "#FFFFFF",
   },
   {
     name: "Sotheby's International Realty",
@@ -53,13 +53,13 @@ export const RE_BRANDS: REBrand[] = [
     name: "Douglas Elliman",
     aliases: ["douglas elliman", "elliman"],
     primaryColor: "#0084B4",
-    secondaryColor: "#6B7280",
+    secondaryColor: "#002A76",
   },
   {
     name: "Corcoran",
     aliases: ["corcoran"],
-    primaryColor: "#000000",
-    secondaryColor: "#E06A78",
+    primaryColor: "#F05A28",
+    secondaryColor: "#58595B",
   },
   {
     name: "Howard Hanna",
@@ -76,8 +76,8 @@ export const RE_BRANDS: REBrand[] = [
   {
     name: "Weichert Realtors",
     aliases: ["weichert", "weichert realtors"],
-    primaryColor: "#FFD700",
-    secondaryColor: "#000000",
+    primaryColor: "#FFDC27",
+    secondaryColor: "#8B211E",
   },
   {
     name: "Better Homes and Gardens",
@@ -88,8 +88,8 @@ export const RE_BRANDS: REBrand[] = [
   {
     name: "ERA Real Estate",
     aliases: ["era real estate", "era realty"],
-    primaryColor: "#CC0000",
-    secondaryColor: "#FFFFFF",
+    primaryColor: "#C8102E",
+    secondaryColor: "#202A54",
   },
   {
     name: "Redfin",
