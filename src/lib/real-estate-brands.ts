@@ -52,8 +52,8 @@ export const RE_BRANDS: REBrand[] = [
   {
     name: "Douglas Elliman",
     aliases: ["douglas elliman", "elliman"],
-    primaryColor: "#000000",
-    secondaryColor: "#BE9A5B",
+    primaryColor: "#0084B4",
+    secondaryColor: "#6B7280",
   },
   {
     name: "Corcoran",
