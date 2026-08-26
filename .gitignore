@@ -37,6 +37,7 @@ yarn-error.log*
 # uploads (local dev only — use R2/S3 in production)
 public/uploads/*
 !public/uploads/.gitkeep
+/storage/uploads/*
 
 # local design reference material — not app content
 public/Example Flyers/

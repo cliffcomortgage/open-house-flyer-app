@@ -13,7 +13,7 @@ async function saveLocally(
 ): Promise<string> {
   const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "bin";
   const filename = `${crypto.randomUUID()}.${ext}`;
-  const dir = path.join(process.cwd(), "public", "uploads", folder);
+  const dir = path.join(process.cwd(), "storage", "uploads", folder);
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(path.join(dir, filename), buffer);
   return `/uploads/${folder}/${filename}`;
