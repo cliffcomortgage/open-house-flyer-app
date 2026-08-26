@@ -179,9 +179,13 @@ export default function EditRealtorPage() {
         });
         setHeadshotUrl(data.headshotUrl);
         setCompanyLogoUrl(data.companyLogoUrl);
-        // Check if it was auto-detected
+        // If the company name matches a known brand, treat it as
+        // auto-detected and let it sync to the current brand colors — even
+        // if the saved colors are stale from before a brand data
+        // correction. Only companies with no known brand match, but with a
+        // saved custom color, are treated as manually overridden.
         const brand = detectBrand(data.companyName);
-        if (brand && brand.primaryColor === data.brandPrimary) {
+        if (brand) {
           setDetectedBrand(brand);
         } else if (data.brandPrimary) {
           setOverrideBrand(true);
