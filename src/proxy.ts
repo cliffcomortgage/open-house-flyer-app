@@ -12,8 +12,9 @@ export default auth((req) => {
   const isApiAuth = nextUrl.pathname.startsWith("/api/auth");
   const isSetPasswordPage = nextUrl.pathname.startsWith("/set-password");
   const isUploadsPath = nextUrl.pathname.startsWith("/uploads");
+  const isHealthCheck = nextUrl.pathname === "/api/health";
 
-  if (isApiAuth || isSharePage || isSetPasswordPage || isUploadsPath) return NextResponse.next();
+  if (isApiAuth || isSharePage || isSetPasswordPage || isUploadsPath || isHealthCheck) return NextResponse.next();
 
   if (isAuthPage) {
     if (isLoggedIn) {
