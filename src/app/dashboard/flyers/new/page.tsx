@@ -14,6 +14,7 @@ import {
   Minus,
   Check,
   QrCode,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -151,6 +152,28 @@ function PropertyStep({
   onChange: (d: Partial<PropertyData>) => void;
 }) {
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [zillowUrl, setZillowUrl] = useState("");
+  const [lookupLoading, setLookupLoading] = useState(false);
+
+  const lookupZillow = async () => {
+    if (!zillowUrl.trim()) return;
+    setLookupLoading(true);
+    try {
+      const res = await fetch("/api/property-lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: zillowUrl.trim() }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Lookup failed");
+      onChange(result.propertyData);
+      toast.success("Property details filled in — double-check before saving");
+    } catch (err: any) {
+      toast.error(err.message || "Property lookup failed");
+    } finally {
+      setLookupLoading(false);
+    }
+  };
 
   const onPhotoDrop = useCallback(
     async (files: File[]) => {
@@ -225,6 +248,42 @@ function PropertyStep({
       <div>
         <h2 className="text-lg font-bold text-slate-900 mb-1">Property information</h2>
         <p className="text-sm text-slate-500">Enter the property details and upload photos.</p>
+      </div>
+
+      {/* Zillow import */}
+      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+        <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+          Import from Zillow (optional)
+        </Label>
+        <div className="flex gap-2">
+          <Input
+            className="h-9"
+            placeholder="https://www.zillow.com/homedetails/…"
+            value={zillowUrl}
+            onChange={(e) => setZillowUrl(e.target.value)}
+            disabled={lookupLoading}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            className="h-9 shrink-0"
+            onClick={lookupZillow}
+            disabled={lookupLoading || !zillowUrl.trim()}
+          >
+            {lookupLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <Search className="w-4 h-4 mr-1.5" />
+                Lookup
+              </>
+            )}
+          </Button>
+        </div>
+        <p className="text-xs text-slate-400 mt-1.5">
+          Paste a Zillow listing link to auto-fill the fields below. Always double-check the
+          results — photos aren&apos;t imported, so upload your own.
+        </p>
       </div>
 
       {/* Manual fields */}
