@@ -3,19 +3,18 @@ import type { PropertyData } from "@/types";
 const ZILLOW_SCRAPER_ACTOR_ID = "dYj8mIdQOTfCyxEGU";
 
 interface ZillowScraperItem {
-  status: string;
-  errorCode?: string | null;
-  address?: {
-    streetAddress?: string | null;
-    city?: string | null;
-    state?: string | null;
-    zipcode?: string | null;
-  };
+  statusCode?: number;
+  statusMessage?: string;
+  streetAddress?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zipcode?: string | null;
   price?: number | null;
-  beds?: number | null;
-  baths?: number | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
   livingArea?: number | null;
-  lotSize?: string | number | null;
+  lotAreaValue?: number | null;
+  lotAreaUnits?: string | null;
   yearBuilt?: number | null;
   description?: string | null;
 }
@@ -23,7 +22,7 @@ interface ZillowScraperItem {
 export class ZillowLookupError extends Error {}
 
 /**
- * Looks up a Zillow listing via the Apify property-details scraper and maps
+ * Looks up a Zillow listing via the Apify "Property V2" scraper and maps
  * the result onto our PropertyData shape. Photos are intentionally not
  * pulled in — the LO uploads their own.
  */
@@ -44,10 +43,7 @@ export async function lookupZillowProperty(
         Authorization: `Bearer ${apiToken}`,
       },
       body: JSON.stringify({
-        propertyUrls: [zillowUrl],
-        maxItems: 1,
-        includePhotos: false,
-        includeHistory: false,
+        input: [{ url: zillowUrl }],
       }),
     }
   );
@@ -63,24 +59,26 @@ export async function lookupZillowProperty(
   if (!item) {
     throw new ZillowLookupError("No data returned for that listing.");
   }
-  if (item.status !== "success") {
+  if (item.statusCode !== 200) {
     throw new ZillowLookupError(
-      item.status === "blocked"
-        ? "Zillow blocked this request — try again in a moment."
-        : "Couldn't find that listing. Double-check the URL."
+      `Couldn't fetch that listing (${item.statusMessage || item.statusCode || "unknown error"}). Double-check the URL.`
     );
   }
 
   const data: Partial<PropertyData> = {};
-  if (item.address?.streetAddress) data.address = item.address.streetAddress;
-  if (item.address?.city) data.city = item.address.city;
-  if (item.address?.state) data.state = item.address.state;
-  if (item.address?.zipcode) data.zipCode = item.address.zipcode;
+  if (item.streetAddress) data.address = item.streetAddress;
+  if (item.city) data.city = item.city;
+  if (item.state) data.state = item.state;
+  if (item.zipcode) data.zipCode = item.zipcode;
   if (typeof item.price === "number") data.price = item.price;
-  if (typeof item.beds === "number") data.bedrooms = item.beds;
-  if (typeof item.baths === "number") data.bathrooms = item.baths;
+  if (typeof item.bedrooms === "number") data.bedrooms = item.bedrooms;
+  if (typeof item.bathrooms === "number") data.bathrooms = item.bathrooms;
   if (typeof item.livingArea === "number") data.squareFeet = item.livingArea;
-  if (item.lotSize !== null && item.lotSize !== undefined) data.lotSize = String(item.lotSize);
+  if (typeof item.lotAreaValue === "number") {
+    data.lotSize = item.lotAreaUnits
+      ? `${item.lotAreaValue.toLocaleString()} ${item.lotAreaUnits}`
+      : String(item.lotAreaValue);
+  }
   if (typeof item.yearBuilt === "number") data.yearBuilt = item.yearBuilt;
   if (item.description) data.description = item.description;
 
