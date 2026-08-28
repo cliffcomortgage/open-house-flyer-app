@@ -23,11 +23,17 @@ export default async function PrintFlyerPage({
   const session = await auth();
   if (!session?.user) notFound();
 
-  const isAdmin = (session.user as any).role === "ADMIN";
+  const role = (session.user as any).role;
+  const isAdmin = role === "ADMIN";
+  const isRealtor = role === "REALTOR";
   const userId = (session.user as any).id;
 
   const flyerRecord = await prisma.flyer.findFirst({
-    where: isAdmin ? { id } : { id, loanOfficer: { userId } },
+    where: isAdmin
+      ? { id }
+      : isRealtor
+      ? { id, realtor: { userId } }
+      : { id, loanOfficer: { userId } },
     include: {
       loanOfficer: { include: { user: { select: { email: true, isActive: true } } } },
       realtor: true,

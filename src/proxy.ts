@@ -5,11 +5,15 @@ import { IMPERSONATION_COOKIE } from "@/lib/session-lo";
 export default auth((req) => {
   const { nextUrl, auth: session } = req;
   const isLoggedIn = !!session?.user;
-  const isAdmin = (session?.user as any)?.role === "ADMIN";
+  const role = (session?.user as any)?.role;
+  const isAdmin = role === "ADMIN";
+  const isRealtor = role === "REALTOR";
   const isImpersonating = isAdmin && !!req.cookies.get(IMPERSONATION_COOKIE)?.value;
 
   const isAuthPage = nextUrl.pathname.startsWith("/login");
   const isAdminPage = nextUrl.pathname.startsWith("/admin");
+  const isDashboardPage = nextUrl.pathname.startsWith("/dashboard");
+  const isRealtorPage = nextUrl.pathname.startsWith("/realtor");
   const isSharePage = nextUrl.pathname.startsWith("/share") || nextUrl.pathname.startsWith("/api/share");
   const isApiAuth = nextUrl.pathname.startsWith("/api/auth");
   const isSetPasswordPage = nextUrl.pathname.startsWith("/set-password");
@@ -18,9 +22,12 @@ export default auth((req) => {
 
   if (isApiAuth || isSharePage || isSetPasswordPage || isUploadsPath || isHealthCheck) return NextResponse.next();
 
+  const homeForSession = () =>
+    isAdmin && !isImpersonating ? "/admin" : isRealtor ? "/realtor" : "/dashboard";
+
   if (isAuthPage) {
     if (isLoggedIn) {
-      return NextResponse.redirect(new URL(isAdmin && !isImpersonating ? "/admin" : "/dashboard", nextUrl));
+      return NextResponse.redirect(new URL(homeForSession(), nextUrl));
     }
     return NextResponse.next();
   }
@@ -30,7 +37,15 @@ export default auth((req) => {
   }
 
   if (isAdminPage && !isAdmin) {
-    return NextResponse.redirect(new URL("/dashboard", nextUrl));
+    return NextResponse.redirect(new URL(homeForSession(), nextUrl));
+  }
+
+  if (isRealtorPage && !isRealtor) {
+    return NextResponse.redirect(new URL(homeForSession(), nextUrl));
+  }
+
+  if (isDashboardPage && isRealtor) {
+    return NextResponse.redirect(new URL("/realtor", nextUrl));
   }
 
   if (nextUrl.pathname === "/dashboard" && isAdmin && !isImpersonating) {

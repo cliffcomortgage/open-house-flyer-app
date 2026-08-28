@@ -25,10 +25,18 @@ export async function GET() {
 
   const realtors = await prisma.realtor.findMany({
     where: { loanOfficerId: loId },
+    include: { user: { select: { email: true, isActive: true, password: true } } },
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(realtors);
+  const withAccountStatus = realtors.map(({ user, ...realtor }) => ({
+    ...realtor,
+    account: user
+      ? { email: user.email, isActive: user.isActive, hasPassword: user.password !== null }
+      : null,
+  }));
+
+  return NextResponse.json(withAccountStatus);
 }
 
 export async function POST(req: NextRequest) {

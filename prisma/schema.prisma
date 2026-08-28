@@ -10,6 +10,7 @@ datasource db {
 enum Role {
   ADMIN
   LO
+  REALTOR
 }
 
 enum FlyerStatus {
@@ -33,6 +34,7 @@ model User {
   passwordSetToken       String?      @unique
   passwordSetExpiresAt   DateTime?
   loanOfficer            LoanOfficer?
+  realtor                Realtor?
   accounts               Account[]
   sessions               Session[]
   createdAt              DateTime     @default(now())
@@ -86,6 +88,8 @@ model Realtor {
   id              String      @id @default(cuid())
   loanOfficerId   String
   loanOfficer     LoanOfficer @relation(fields: [loanOfficerId], references: [id], onDelete: Cascade)
+  userId          String?     @unique
+  user            User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   firstName       String
   lastName        String
   title           String      @default("Realtor")

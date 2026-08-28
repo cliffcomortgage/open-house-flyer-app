@@ -75,3 +75,20 @@ export async function sendLoanOfficerWelcomeEmail(params: {
     htmlBody: `<p>Hi ${params.loName},</p><p>An account has been created for you on the Cliffco Open House Flyer App. Set your password to get started:</p><p><a href="${setPasswordUrl}">${setPasswordUrl}</a></p><p>This link expires in 7 days.</p>`,
   });
 }
+
+export async function sendRealtorInviteEmail(params: {
+  toEmail: string;
+  realtorName: string;
+  loName: string;
+  setPasswordToken: string;
+  baseUrl: string;
+}): Promise<void> {
+  const setPasswordUrl = `${params.baseUrl}/set-password?token=${params.setPasswordToken}`;
+
+  await sendEmail({
+    to: [params.toEmail],
+    subject: `${params.loName} invited you to create listing flyers`,
+    textBody: `Hi ${params.realtorName},\n\n${params.loName} has invited you to create your own open house listing flyers, co-branded with their info, on the Cliffco Open House Flyer App. Set your password to get started:\n\n${setPasswordUrl}\n\nThis link expires in 7 days.`,
+    htmlBody: `<p>Hi ${params.realtorName},</p><p><strong>${params.loName}</strong> has invited you to create your own open house listing flyers, co-branded with their info, on the Cliffco Open House Flyer App. Set your password to get started:</p><p><a href="${setPasswordUrl}">${setPasswordUrl}</a></p><p>This link expires in 7 days.</p>`,
+  });
+}

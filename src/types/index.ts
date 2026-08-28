@@ -1,4 +1,4 @@
-export type Role = "ADMIN" | "LO";
+export type Role = "ADMIN" | "LO" | "REALTOR";
 export type FlyerStatus = "DRAFT" | "SAVED";
 export type ApprovalStatus = "NOT_SUBMITTED" | "PENDING" | "APPROVED" | "REJECTED";
 
@@ -60,6 +60,7 @@ export interface Realtor {
   companyLogoUrl: string | null;
   brandPrimary: string | null;
   brandSecondary: string | null;
+  account?: { email: string; isActive: boolean; hasPassword: boolean } | null;
   createdAt: string;
 }
 

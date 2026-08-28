@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Phone, Mail, Globe, Building, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Phone, Mail, Globe, Building, Users, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,7 +20,17 @@ import {
 import type { Realtor } from "@/types";
 import { formatPhone } from "@/lib/utils";
 
-function RealtorCard({ realtor, onDelete }: { realtor: Realtor; onDelete: () => void }) {
+function RealtorCard({
+  realtor,
+  onDelete,
+  onInvite,
+  inviting,
+}: {
+  realtor: Realtor;
+  onDelete: () => void;
+  onInvite: () => void;
+  inviting: boolean;
+}) {
   const initials = `${realtor.firstName[0]}${realtor.lastName[0]}`.toUpperCase();
   const brandColor = realtor.brandPrimary || "#6633cc";
 
@@ -51,10 +61,36 @@ function RealtorCard({ realtor, onDelete }: { realtor: Realtor; onDelete: () => 
                 {realtor.firstName} {realtor.lastName}
               </h3>
               <p className="text-xs text-slate-500 truncate">{realtor.title}</p>
+              {realtor.account && !realtor.account.hasPassword && (
+                <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-100 mt-1">
+                  Pending setup
+                </Badge>
+              )}
+              {realtor.account?.hasPassword && (
+                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-100 mt-1">
+                  Active account
+                </Badge>
+              )}
             </div>
           </div>
 
           <div className="flex gap-1 shrink-0">
+            {!realtor.account?.hasPassword && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                title={realtor.account ? "Resend invite" : "Invite to create their own flyers"}
+                disabled={inviting}
+                onClick={onInvite}
+              >
+                {inviting ? (
+                  <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5 text-slate-400" />
+                )}
+              </Button>
+            )}
             <Button asChild variant="ghost" size="icon" className="h-8 w-8">
               <Link href={`/dashboard/realtors/${realtor.id}/edit`}>
                 <Pencil className="w-3.5 h-3.5 text-slate-400" />
@@ -158,6 +194,7 @@ function RealtorCard({ realtor, onDelete }: { realtor: Realtor; onDelete: () => 
 export default function RealtorsPage() {
   const [realtors, setRealtors] = useState<Realtor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [invitingId, setInvitingId] = useState<string | null>(null);
 
   const fetchRealtors = async () => {
     try {
@@ -184,6 +221,26 @@ export default function RealtorsPage() {
       setRealtors((prev) => prev.filter((r) => r.id !== id));
     } catch {
       toast.error("Failed to delete realtor");
+    }
+  };
+
+  const handleInvite = async (realtor: Realtor) => {
+    setInvitingId(realtor.id);
+    try {
+      const endpoint = realtor.account ? "resend-invite" : "invite";
+      const res = await fetch(`/api/realtors/${realtor.id}/${endpoint}`, { method: "POST" });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to send invite");
+      toast.success(
+        realtor.account
+          ? `Invite resent to ${realtor.email}`
+          : `Invite sent to ${realtor.email}`
+      );
+      fetchRealtors();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send invite");
+    } finally {
+      setInvitingId(null);
     }
   };
 
@@ -233,6 +290,8 @@ export default function RealtorsPage() {
               key={realtor.id}
               realtor={realtor}
               onDelete={() => handleDelete(realtor.id)}
+              onInvite={() => handleInvite(realtor)}
+              inviting={invitingId === realtor.id}
             />
           ))}
         </div>
