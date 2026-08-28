@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard,
@@ -148,7 +148,26 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [impersonatedLoName, setImpersonatedLoName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if ((session?.user as any)?.role !== "ADMIN") {
+      setImpersonatedLoName(null);
+      return;
+    }
+    fetch("/api/loan-officers/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((lo) => setImpersonatedLoName(lo ? `${lo.firstName} ${lo.lastName}` : null))
+      .catch(() => setImpersonatedLoName(null));
+  }, [session]);
+
+  const stopImpersonating = async () => {
+    await fetch("/api/admin/impersonate/stop", { method: "POST" });
+    router.push("/admin");
+  };
 
   // This layout owns its own scroll region (<main>); prevent the document
   // itself from also becoming scrollable, which nested flex/overflow-auto
@@ -165,41 +184,55 @@ export default function DashboardLayout({
   }, []);
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:flex-col w-60 bg-white border-r border-slate-200 shrink-0">
-        <SidebarContent />
-      </aside>
+    <div className="flex flex-col h-screen bg-slate-50 overflow-hidden">
+      {impersonatedLoName && (
+        <div className="shrink-0 bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-3 text-sm font-medium">
+          <span>Viewing as {impersonatedLoName} — changes made here are saved to their account.</span>
+          <button
+            onClick={stopImpersonating}
+            className="underline underline-offset-2 hover:no-underline"
+          >
+            Return to admin
+          </button>
+        </div>
+      )}
 
-      {/* Mobile header + sheet */}
-      <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
-        <header className="lg:hidden flex items-center justify-between h-14 px-4 bg-white border-b border-slate-200 shrink-0">
-          <div className="flex items-center gap-2">
-            <Image
-              src="/logo-black.png"
-              alt="Cliffco Mortgage Bank"
-              width={130}
-              height={40}
-              className="object-contain"
-              priority
-            />
-          </div>
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
-                <Menu className="w-4 h-4" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-64">
-              <SidebarContent onNavClick={() => setMobileOpen(false)} />
-            </SheetContent>
-          </Sheet>
-        </header>
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Desktop sidebar */}
+        <aside className="hidden lg:flex lg:flex-col w-60 bg-white border-r border-slate-200 shrink-0">
+          <SidebarContent />
+        </aside>
 
-        {/* Main content */}
-        <main className="flex-1 min-h-0 overflow-y-auto">
-          {children}
-        </main>
+        {/* Mobile header + sheet */}
+        <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
+          <header className="lg:hidden flex items-center justify-between h-14 px-4 bg-white border-b border-slate-200 shrink-0">
+            <div className="flex items-center gap-2">
+              <Image
+                src="/logo-black.png"
+                alt="Cliffco Mortgage Bank"
+                width={130}
+                height={40}
+                className="object-contain"
+                priority
+              />
+            </div>
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Menu className="w-4 h-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-64">
+                <SidebarContent onNavClick={() => setMobileOpen(false)} />
+              </SheetContent>
+            </Sheet>
+          </header>
+
+          {/* Main content */}
+          <main className="flex-1 min-h-0 overflow-y-auto">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );

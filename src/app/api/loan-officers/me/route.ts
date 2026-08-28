@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getSessionLoanOfficerId } from "@/lib/session-lo";
 
 function assembleBranchAddress(street?: string, suite?: string, city?: string, state?: string, zip?: string): string | null {
   const parts: string[] = [];
@@ -18,10 +19,13 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = (session.user as any).id as string;
+  const loId = await getSessionLoanOfficerId(session);
+  if (!loId) {
+    return NextResponse.json({ error: "Loan officer not found" }, { status: 404 });
+  }
 
   const lo = await prisma.loanOfficer.findUnique({
-    where: { userId },
+    where: { id: loId },
     include: { user: { select: { email: true, isActive: true } } },
   });
 
@@ -38,9 +42,12 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = (session.user as any).id as string;
+  const loId = await getSessionLoanOfficerId(session);
+  if (!loId) {
+    return NextResponse.json({ error: "Loan officer not found" }, { status: 404 });
+  }
 
-  const lo = await prisma.loanOfficer.findUnique({ where: { userId } });
+  const lo = await prisma.loanOfficer.findUnique({ where: { id: loId } });
   if (!lo) {
     return NextResponse.json({ error: "Loan officer not found" }, { status: 404 });
   }

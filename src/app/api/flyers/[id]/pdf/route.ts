@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-
-async function getLO(userId: string) {
-  return prisma.loanOfficer.findUnique({ where: { userId } });
-}
+import { getSessionLoanOfficerId } from "@/lib/session-lo";
 
 export async function POST(
   req: NextRequest,
@@ -14,10 +11,10 @@ export async function POST(
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const lo = await getLO((session.user as any).id);
-  if (!lo) return NextResponse.json({ error: "LO not found" }, { status: 404 });
+  const loId = await getSessionLoanOfficerId(session);
+  if (!loId) return NextResponse.json({ error: "LO not found" }, { status: 404 });
 
-  const flyer = await prisma.flyer.findFirst({ where: { id, loanOfficerId: lo.id } });
+  const flyer = await prisma.flyer.findFirst({ where: { id, loanOfficerId: loId } });
   if (!flyer) return NextResponse.json({ error: "Flyer not found" }, { status: 404 });
 
   const scenarios = (flyer.loanScenarios as any[]) || [];

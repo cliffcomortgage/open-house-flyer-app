@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useDropzone } from "react-dropzone";
-import { Pencil, Trash2, UserCheck, UserX, Loader2, Upload, X, Mail } from "lucide-react";
+import { Pencil, Trash2, UserCheck, UserX, Loader2, Upload, X, Mail, LogIn } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,12 +103,14 @@ function HeadshotDropzone({ value, onChange }: { value: string | null; onChange:
 }
 
 export default function AdminLoanOfficersPage() {
+  const router = useRouter();
   const [loanOfficers, setLoanOfficers] = useState<LoanOfficer[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [headshotUrl, setHeadshotUrl] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
 
   const {
     register,
@@ -187,6 +190,20 @@ export default function AdminLoanOfficersPage() {
       toast.error(err.message || "Failed to resend welcome email");
     } finally {
       setResendingId(null);
+    }
+  };
+
+  const impersonate = async (lo: LoanOfficer) => {
+    setImpersonatingId(lo.id);
+    try {
+      const res = await fetch(`/api/admin/loan-officers/${lo.id}/impersonate`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error();
+      router.push("/dashboard");
+    } catch {
+      toast.error("Failed to log in as this loan officer");
+      setImpersonatingId(null);
     }
   };
 
@@ -358,6 +375,18 @@ export default function AdminLoanOfficersPage() {
                               : <Mail className="w-3.5 h-3.5 text-slate-400" />}
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          title="Log in as this loan officer"
+                          disabled={impersonatingId === lo.id}
+                          onClick={() => impersonate(lo)}
+                        >
+                          {impersonatingId === lo.id
+                            ? <Loader2 className="w-3.5 h-3.5 text-slate-400 animate-spin" />
+                            : <LogIn className="w-3.5 h-3.5 text-slate-400" />}
+                        </Button>
                         <Button asChild variant="ghost" size="icon" className="h-8 w-8" title="Edit">
                           <Link href={`/admin/loan-officers/${lo.id}/edit`}>
                             <Pencil className="w-3.5 h-3.5 text-slate-400" />

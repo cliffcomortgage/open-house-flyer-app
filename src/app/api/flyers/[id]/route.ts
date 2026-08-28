@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-
-async function getLO(userId: string) {
-  return prisma.loanOfficer.findUnique({ where: { userId } });
-}
+import { getSessionLoanOfficerId } from "@/lib/session-lo";
 
 async function getOwnedFlyer(flyerId: string, loId: string) {
   return prisma.flyer.findFirst({
@@ -26,10 +23,10 @@ export async function GET(
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const lo = await getLO((session.user as any).id);
-  if (!lo) return NextResponse.json({ error: "LO not found" }, { status: 404 });
+  const loId = await getSessionLoanOfficerId(session);
+  if (!loId) return NextResponse.json({ error: "LO not found" }, { status: 404 });
 
-  const flyer = await getOwnedFlyer(id, lo.id);
+  const flyer = await getOwnedFlyer(id, loId);
   if (!flyer) return NextResponse.json({ error: "Flyer not found" }, { status: 404 });
 
   return NextResponse.json(flyer);
@@ -43,10 +40,10 @@ export async function PUT(
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const lo = await getLO((session.user as any).id);
-  if (!lo) return NextResponse.json({ error: "LO not found" }, { status: 404 });
+  const loId = await getSessionLoanOfficerId(session);
+  if (!loId) return NextResponse.json({ error: "LO not found" }, { status: 404 });
 
-  const existing = await getOwnedFlyer(id, lo.id);
+  const existing = await getOwnedFlyer(id, loId);
   if (!existing) return NextResponse.json({ error: "Flyer not found" }, { status: 404 });
 
   const body = await req.json();
@@ -57,7 +54,7 @@ export async function PUT(
 
   if (realtorId) {
     const realtor = await prisma.realtor.findFirst({
-      where: { id: realtorId, loanOfficerId: lo.id },
+      where: { id: realtorId, loanOfficerId: loId },
     });
     if (!realtor) {
       return NextResponse.json({ error: "Realtor not found" }, { status: 400 });
@@ -95,10 +92,10 @@ export async function DELETE(
   const session = await auth();
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const lo = await getLO((session.user as any).id);
-  if (!lo) return NextResponse.json({ error: "LO not found" }, { status: 404 });
+  const loId = await getSessionLoanOfficerId(session);
+  if (!loId) return NextResponse.json({ error: "LO not found" }, { status: 404 });
 
-  const existing = await getOwnedFlyer(id, lo.id);
+  const existing = await getOwnedFlyer(id, loId);
   if (!existing) return NextResponse.json({ error: "Flyer not found" }, { status: 404 });
 
   await prisma.flyer.delete({ where: { id } });

@@ -1,10 +1,12 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { IMPERSONATION_COOKIE } from "@/lib/session-lo";
 
 export default auth((req) => {
   const { nextUrl, auth: session } = req;
   const isLoggedIn = !!session?.user;
   const isAdmin = (session?.user as any)?.role === "ADMIN";
+  const isImpersonating = isAdmin && !!req.cookies.get(IMPERSONATION_COOKIE)?.value;
 
   const isAuthPage = nextUrl.pathname.startsWith("/login");
   const isAdminPage = nextUrl.pathname.startsWith("/admin");
@@ -18,7 +20,7 @@ export default auth((req) => {
 
   if (isAuthPage) {
     if (isLoggedIn) {
-      return NextResponse.redirect(new URL(isAdmin ? "/admin" : "/dashboard", nextUrl));
+      return NextResponse.redirect(new URL(isAdmin && !isImpersonating ? "/admin" : "/dashboard", nextUrl));
     }
     return NextResponse.next();
   }
@@ -31,7 +33,7 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/dashboard", nextUrl));
   }
 
-  if (nextUrl.pathname === "/dashboard" && isAdmin) {
+  if (nextUrl.pathname === "/dashboard" && isAdmin && !isImpersonating) {
     return NextResponse.redirect(new URL("/admin", nextUrl));
   }
 

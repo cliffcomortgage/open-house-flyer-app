@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { detectBrand } from "@/lib/real-estate-brands";
-
-async function getLO(userId: string) {
-  return prisma.loanOfficer.findUnique({ where: { userId } });
-}
+import { getSessionLoanOfficerId } from "@/lib/session-lo";
 
 function assembleOfficeAddress(street?: string, suite?: string, city?: string, state?: string, zip?: string): string | null {
   const parts: string[] = [];
@@ -23,11 +20,11 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const lo = await getLO((session.user as any).id);
-  if (!lo) return NextResponse.json({ error: "LO not found" }, { status: 404 });
+  const loId = await getSessionLoanOfficerId(session);
+  if (!loId) return NextResponse.json({ error: "LO not found" }, { status: 404 });
 
   const realtors = await prisma.realtor.findMany({
-    where: { loanOfficerId: lo.id },
+    where: { loanOfficerId: loId },
     orderBy: { createdAt: "desc" },
   });
 
@@ -40,8 +37,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const lo = await getLO((session.user as any).id);
-  if (!lo) return NextResponse.json({ error: "LO not found" }, { status: 404 });
+  const loId = await getSessionLoanOfficerId(session);
+  if (!loId) return NextResponse.json({ error: "LO not found" }, { status: 404 });
 
   const body = await req.json();
   const {
@@ -65,7 +62,7 @@ export async function POST(req: NextRequest) {
 
   const realtor = await prisma.realtor.create({
     data: {
-      loanOfficerId: lo.id,
+      loanOfficerId: loId,
       firstName,
       lastName,
       title: title || "Realtor",
