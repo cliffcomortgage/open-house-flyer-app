@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getSessionLoanOfficerId } from "@/lib/session-lo";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -13,12 +14,14 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const userId = (session.user as any).id as string;
+  const loId = await getSessionLoanOfficerId(session);
 
-  const lo = await prisma.loanOfficer.findUnique({
-    where: { userId },
-    select: { id: true, firstName: true, lastName: true },
-  });
+  const lo = loId
+    ? await prisma.loanOfficer.findUnique({
+        where: { id: loId },
+        select: { id: true, firstName: true, lastName: true },
+      })
+    : null;
 
   if (!lo) {
     if ((session.user as any).role === "ADMIN") redirect("/admin");
