@@ -113,7 +113,7 @@ export function TemplateModernMinimal({
         style={{
           position: "relative",
           width: "100%",
-          height: "460px",
+          height: "340px",
           flexShrink: 0,
           overflow: "hidden",
           background: "#e8edf2",
@@ -141,69 +141,72 @@ export function TemplateModernMinimal({
         )}
       </div>
 
-      {/* Price — editorial, oversized, white background */}
-      <div style={{ padding: "26px 36px 0", flexShrink: 0 }}>
-        <div
-          style={{
-            fontSize: "10.5px",
-            fontWeight: 700,
-            color: primaryColor,
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
-          }}
-        >
-          Offered At
-        </div>
-        <div
-          style={{
-            fontSize: "62px",
-            fontWeight: 800,
-            color: "#0f172a",
-            lineHeight: 1,
-            letterSpacing: "-2.5px",
-            marginTop: "6px",
-          }}
-        >
-          {propertyData.price ? formatCurrency(propertyData.price) : "Price Upon Request"}
-        </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "14px",
-            marginTop: "13px",
-          }}
-        >
-          <div style={{ height: "1px", width: "48px", background: primaryColor, flexShrink: 0 }} />
-          <div style={{ fontSize: "14px", color: "#475569", fontWeight: 400, letterSpacing: "0.01em" }}>
-            {addressLine}
+      {/* Price + stats — side by side to leave more room below for the description */}
+      <div
+        style={{
+          padding: "22px 36px 0",
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "24px",
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: "10.5px",
+              fontWeight: 700,
+              color: primaryColor,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+            }}
+          >
+            Offered At
           </div>
-        </div>
-      </div>
-
-      {/* Stats — plain, bold numbers with thin hairline dividers */}
-      {stats.length > 0 && (
-        <div style={{ padding: "20px 36px 0", flexShrink: 0 }}>
+          <div
+            style={{
+              fontSize: "56px",
+              fontWeight: 800,
+              color: "#0f172a",
+              lineHeight: 1,
+              letterSpacing: "-2.5px",
+              marginTop: "6px",
+            }}
+          >
+            {propertyData.price ? formatCurrency(propertyData.price) : "Price Upon Request"}
+          </div>
           <div
             style={{
               display: "flex",
-              borderTop: "1px solid #e2e8f0",
-              paddingTop: "16px",
+              alignItems: "center",
+              gap: "14px",
+              marginTop: "13px",
+            }}
+          >
+            <div style={{ height: "1px", width: "48px", background: primaryColor, flexShrink: 0 }} />
+            <div style={{ fontSize: "14px", color: "#475569", fontWeight: 400, letterSpacing: "0.01em" }}>
+              {addressLine}
+            </div>
+          </div>
+        </div>
+
+        {stats.length > 0 && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              columnGap: "28px",
+              rowGap: "14px",
+              flexShrink: 0,
+              paddingTop: "6px",
             }}
           >
             {stats.map((stat, idx) => (
-              <div
-                key={idx}
-                style={{
-                  flex: 1,
-                  textAlign: "center",
-                  borderRight: idx < stats.length - 1 ? "1px solid #e2e8f0" : "none",
-                  padding: "0 10px",
-                }}
-              >
+              <div key={idx}>
                 <div
                   style={{
-                    fontSize: "26px",
+                    fontSize: "20px",
                     fontWeight: 800,
                     color: "#0f172a",
                     lineHeight: 1,
@@ -214,11 +217,11 @@ export function TemplateModernMinimal({
                 </div>
                 <div
                   style={{
-                    fontSize: "8.5px",
+                    fontSize: "8px",
                     color: "#94a3b8",
                     textTransform: "uppercase",
-                    letterSpacing: "0.14em",
-                    marginTop: "5px",
+                    letterSpacing: "0.12em",
+                    marginTop: "4px",
                   }}
                 >
                   {stat!.label}
@@ -226,24 +229,26 @@ export function TemplateModernMinimal({
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Description — plain paragraph, grows to fill remaining space */}
       {propertyData.description ? (
-        <div style={{ padding: "20px 36px 0", flex: 1, minHeight: 0, overflow: "hidden" }}>
-          <div
-            style={{
-              fontSize: `${propertyData.descriptionFontSize || 12}px`,
-              color: "#475569",
-              lineHeight: "1.78",
-              display: "-webkit-box",
-              WebkitLineClamp: 14,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-          >
-            {propertyData.description}
+        <div style={{ padding: "22px 36px 0", flex: 1, minHeight: 0, overflow: "hidden" }}>
+          <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: "18px", height: "100%" }}>
+            <div
+              style={{
+                fontSize: `${propertyData.descriptionFontSize || 12}px`,
+                color: "#475569",
+                lineHeight: "1.78",
+                display: "-webkit-box",
+                WebkitLineClamp: 20,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {propertyData.description}
+            </div>
           </div>
         </div>
       ) : (

@@ -95,7 +95,7 @@ export function TemplateShowcaseOneRate({
         style={{
           position: "relative",
           width: "100%",
-          height: "350px",
+          height: "290px",
           flexShrink: 0,
           overflow: "hidden",
           background: "#e8edf2",

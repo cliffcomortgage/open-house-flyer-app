@@ -295,7 +295,7 @@ export function TemplateMarketLeader({
       <div
         style={{
           display: "flex",
-          height: "245px",
+          height: "210px",
           flexShrink: 0,
           gap: "2px",
           marginTop: "16px",

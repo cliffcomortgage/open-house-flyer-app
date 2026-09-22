@@ -146,7 +146,7 @@ export function TemplateGalleryGrid({
           gridTemplateColumns: "1fr 1fr",
           gridTemplateRows: "1fr 1fr",
           gap: "2px",
-          height: "490px",
+          height: "420px",
           flexShrink: 0,
           marginTop: "18px",
         }}
