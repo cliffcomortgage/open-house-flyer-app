@@ -83,6 +83,7 @@ export interface PropertyData {
   description: string | null;
   descriptionFontSize: number | null;
   photos: string[];
+  photoPositions: Record<string, { x: number; y: number }> | null;
   mlsNumber: string | null;
   openHouseDate: string | null;
   openHouseStartTime: string | null;

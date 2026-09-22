@@ -1,5 +1,6 @@
 import type { LoanOfficer, Realtor, CompanySettings, PropertyData } from "@/types";
 import { FlyerFooter } from "./FlyerFooter";
+import { PositionableImage, type PhotoPosition } from "./PositionableImage";
 import { formatCurrency } from "@/lib/utils";
 
 interface TemplateGalleryGridProps {
@@ -9,6 +10,7 @@ interface TemplateGalleryGridProps {
   company: CompanySettings;
   qrCodeDataUrl: string | null;
   distributionState?: string | null;
+  onPhotoPositionChange?: (photoUrl: string, position: PhotoPosition) => void;
 }
 
 export function TemplateGalleryGrid({
@@ -18,6 +20,7 @@ export function TemplateGalleryGrid({
   company,
   qrCodeDataUrl,
   distributionState,
+  onPhotoPositionChange,
 }: TemplateGalleryGridProps) {
   const primaryColor = realtor?.brandPrimary || company.primaryColor || "#6633cc";
   const photos = propertyData.photos || [];
@@ -160,10 +163,16 @@ export function TemplateGalleryGrid({
             }}
           >
             {photos[idx] ? (
-              <img
+              <PositionableImage
                 src={photos[idx]}
                 alt={`Property photo ${idx + 1}`}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                style={{ width: "100%", height: "100%" }}
+                position={propertyData.photoPositions?.[photos[idx]]}
+                onPositionChange={
+                  onPhotoPositionChange
+                    ? (pos) => onPhotoPositionChange(photos[idx], pos)
+                    : undefined
+                }
               />
             ) : (
               <div

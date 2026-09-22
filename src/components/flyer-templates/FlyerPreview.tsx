@@ -5,12 +5,14 @@ import { TemplateModernMinimal } from "./TemplateModernMinimal";
 import { TemplateGalleryGrid } from "./TemplateGalleryGrid";
 import { TemplateShowcaseOneRate } from "./TemplateShowcaseOneRate";
 import { TemplateMarketLeader } from "./TemplateMarketLeader";
+import type { PhotoPosition } from "./PositionableImage";
 
 interface FlyerPreviewProps {
   flyer: Flyer;
   company: CompanySettings;
   qrCodeDataUrl: string | null;
   scale?: number;
+  onPhotoPositionChange?: (photoUrl: string, position: PhotoPosition) => void;
 }
 
 export function FlyerPreview({
@@ -18,6 +20,7 @@ export function FlyerPreview({
   company,
   qrCodeDataUrl,
   scale = 0.5,
+  onPhotoPositionChange,
 }: FlyerPreviewProps) {
   if (!flyer.loanOfficer || !flyer.propertyData) {
     return (
@@ -46,6 +49,7 @@ export function FlyerPreview({
     qrCodeDataUrl,
     loanScenarios: flyer.loanScenarios || undefined,
     distributionState: flyer.distributionState,
+    onPhotoPositionChange,
   };
 
   const renderTemplate = () => {

@@ -3,13 +3,14 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Pencil, Download, ChevronLeft, ZoomIn, ZoomOut, Share2, Check, ShieldCheck, Clock, ShieldAlert, Type, X } from "lucide-react";
+import { Loader2, Pencil, Download, ChevronLeft, ZoomIn, ZoomOut, Share2, Check, ShieldCheck, Clock, ShieldAlert, Type, X, Move } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { FlyerPreview } from "@/components/flyer-templates/FlyerPreview";
+import type { PhotoPosition } from "@/components/flyer-templates/PositionableImage";
 import { generateQRCodeDataURL } from "@/lib/qr-code";
 import { cn } from "@/lib/utils";
 import type { Flyer, CompanySettings } from "@/types";
@@ -49,6 +50,7 @@ export default function FlyerPreviewPage() {
   const [descriptionDraft, setDescriptionDraft] = useState("");
   const [descriptionFontSizeDraft, setDescriptionFontSizeDraft] = useState(DEFAULT_DESCRIPTION_FONT_SIZE);
   const [isSavingText, setIsSavingText] = useState(false);
+  const [isEditingPhotos, setIsEditingPhotos] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
@@ -172,6 +174,25 @@ export default function FlyerPreviewPage() {
     }
   };
 
+  const handlePhotoPositionChange = async (photoUrl: string, position: PhotoPosition) => {
+    if (!flyer?.propertyData) return;
+    const nextPropertyData = {
+      ...flyer.propertyData,
+      photoPositions: { ...(flyer.propertyData.photoPositions || {}), [photoUrl]: position },
+    };
+    setFlyer({ ...flyer, propertyData: nextPropertyData });
+    try {
+      const res = await fetch(`/api/flyers/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ propertyData: nextPropertyData }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      toast.error("Failed to save photo position");
+    }
+  };
+
   const zoomIn = () => {
     const next = ZOOM_STEPS.find((z) => z > zoom);
     if (next) setZoom(next);
@@ -236,6 +257,17 @@ export default function FlyerPreviewPage() {
           >
             <Type className="w-4 h-4 mr-2" />
             Edit Text
+          </Button>
+          <Button
+            variant={isEditingPhotos ? "default" : "outline"}
+            className={isEditingPhotos ? "text-white" : undefined}
+            style={isEditingPhotos ? { backgroundColor: "#6633cc" } : undefined}
+            onClick={() => setIsEditingPhotos((v) => !v)}
+            disabled={isLocked}
+            title={isLocked ? lockedTitle : undefined}
+          >
+            <Move className="w-4 h-4 mr-2" />
+            {isEditingPhotos ? "Done Repositioning" : "Reposition Photos"}
           </Button>
           {flyer?.shareToken && (
             <Button variant="outline" onClick={handleCopyShare} disabled={isLocked} title={isLocked ? lockedTitle : undefined}>
@@ -348,18 +380,24 @@ export default function FlyerPreviewPage() {
         </Button>
       </div>
 
-      {/* Flyer preview — drag to pan when zoomed */}
+      {isEditingPhotos && (
+        <p className="text-center text-xs text-slate-500 mb-3">
+          Drag any photo below to reposition it within its frame.
+        </p>
+      )}
+
+      {/* Flyer preview — drag to pan when zoomed, or drag a photo to reposition it in edit mode */}
       <div
         ref={viewportRef}
         className="overflow-auto pb-6 select-none"
         style={{
           maxHeight: "calc(100vh - 200px)",
-          cursor: "grab",
+          cursor: isEditingPhotos ? "default" : "grab",
         }}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={stopPan}
-        onMouseLeave={stopPan}
+        onMouseDown={isEditingPhotos ? undefined : onMouseDown}
+        onMouseMove={isEditingPhotos ? undefined : onMouseMove}
+        onMouseUp={isEditingPhotos ? undefined : stopPan}
+        onMouseLeave={isEditingPhotos ? undefined : stopPan}
       >
         <div className="flex justify-center p-4" style={{ minWidth: "fit-content" }}>
           <FlyerPreview
@@ -367,6 +405,7 @@ export default function FlyerPreviewPage() {
             company={company}
             qrCodeDataUrl={qrCodeDataUrl}
             scale={zoom}
+            onPhotoPositionChange={isEditingPhotos ? handlePhotoPositionChange : undefined}
           />
         </div>
       </div>

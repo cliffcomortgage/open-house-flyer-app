@@ -1,5 +1,6 @@
 import type { LoanOfficer, Realtor, CompanySettings, PropertyData, LoanScenario } from "@/types";
 import { FlyerFooter } from "./FlyerFooter";
+import { PositionableImage, type PhotoPosition } from "./PositionableImage";
 import { formatCurrency, formatRate } from "@/lib/utils";
 
 interface TemplateShowcaseOneRateProps {
@@ -10,6 +11,7 @@ interface TemplateShowcaseOneRateProps {
   qrCodeDataUrl: string | null;
   loanScenarios?: LoanScenario[];
   distributionState?: string | null;
+  onPhotoPositionChange?: (photoUrl: string, position: PhotoPosition) => void;
 }
 
 function ScenarioRow({ label, value }: { label: string; value: string }) {
@@ -37,6 +39,7 @@ export function TemplateShowcaseOneRate({
   qrCodeDataUrl,
   loanScenarios,
   distributionState,
+  onPhotoPositionChange,
 }: TemplateShowcaseOneRateProps) {
   const primaryColor = realtor?.brandPrimary || company.primaryColor || "#6633cc";
   const heroPhoto = propertyData.photos?.[0];
@@ -102,10 +105,14 @@ export function TemplateShowcaseOneRate({
         }}
       >
         {heroPhoto ? (
-          <img
+          <PositionableImage
             src={heroPhoto}
             alt="Property"
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            style={{ width: "100%", height: "100%" }}
+            position={propertyData.photoPositions?.[heroPhoto]}
+            onPositionChange={
+              onPhotoPositionChange ? (pos) => onPhotoPositionChange(heroPhoto, pos) : undefined
+            }
           />
         ) : (
           <div

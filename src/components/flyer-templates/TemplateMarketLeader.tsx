@@ -1,5 +1,6 @@
 import type { LoanOfficer, Realtor, CompanySettings, PropertyData, LoanScenario } from "@/types";
 import { FlyerFooter } from "./FlyerFooter";
+import { PositionableImage, type PhotoPosition } from "./PositionableImage";
 import { formatCurrency, formatRate } from "@/lib/utils";
 
 interface TemplateMarketLeaderProps {
@@ -10,6 +11,7 @@ interface TemplateMarketLeaderProps {
   qrCodeDataUrl: string | null;
   loanScenarios?: LoanScenario[];
   distributionState?: string | null;
+  onPhotoPositionChange?: (photoUrl: string, position: PhotoPosition) => void;
 }
 
 function ScenarioColumn({
@@ -174,6 +176,7 @@ export function TemplateMarketLeader({
   qrCodeDataUrl,
   loanScenarios,
   distributionState,
+  onPhotoPositionChange,
 }: TemplateMarketLeaderProps) {
   const primaryColor = realtor?.brandPrimary || company.primaryColor || "#6633cc";
   const photos = propertyData.photos || [];
@@ -311,10 +314,14 @@ export function TemplateMarketLeader({
           }}
         >
           {photos[0] ? (
-            <img
+            <PositionableImage
               src={photos[0]}
               alt="Property main"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              style={{ width: "100%", height: "100%" }}
+              position={propertyData.photoPositions?.[photos[0]]}
+              onPositionChange={
+                onPhotoPositionChange ? (pos) => onPhotoPositionChange(photos[0], pos) : undefined
+              }
             />
           ) : (
             <div
@@ -344,10 +351,16 @@ export function TemplateMarketLeader({
               }}
             >
               {photos[idx] ? (
-                <img
+                <PositionableImage
                   src={photos[idx]}
                   alt={`Property ${idx + 1}`}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  style={{ width: "100%", height: "100%" }}
+                  position={propertyData.photoPositions?.[photos[idx]]}
+                  onPositionChange={
+                    onPhotoPositionChange
+                      ? (pos) => onPhotoPositionChange(photos[idx], pos)
+                      : undefined
+                  }
                 />
               ) : (
                 <div
