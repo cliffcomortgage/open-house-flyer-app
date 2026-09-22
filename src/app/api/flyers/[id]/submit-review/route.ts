@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { sendComplianceReviewRequestEmail } from "@/lib/email";
 import { getSessionLoanOfficerId } from "@/lib/session-lo";
+import { autoSubmitForComplianceReview } from "@/lib/compliance";
 
 export async function POST(
   req: NextRequest,
@@ -35,33 +35,12 @@ export async function POST(
     );
   }
 
-  const updated = await prisma.flyer.update({
-    where: { id },
-    data: {
-      approvalStatus: "PENDING",
-      submittedForReviewAt: new Date(),
-      reviewedAt: null,
-      reviewNotes: null,
-    },
-    include: {
-      loanOfficer: { include: { user: { select: { email: true, isActive: true } } } },
-      realtor: true,
-    },
-  });
+  // Flyers now auto-submit for review as soon as they're saved (see
+  // src/lib/compliance.ts); this route is kept as a manual fallback.
+  const result = await autoSubmitForComplianceReview(
+    id,
+    process.env.NEXTAUTH_URL || req.nextUrl.origin
+  );
 
-  const pd = (flyer.propertyData as any) || {};
-  const address = pd.address ? `${pd.address}${pd.city ? `, ${pd.city}` : ""}` : flyer.title || "Untitled property";
-
-  try {
-    await sendComplianceReviewRequestEmail({
-      flyerId: id,
-      address,
-      loName: `${lo.firstName} ${lo.lastName}`,
-      baseUrl: process.env.NEXTAUTH_URL || req.nextUrl.origin,
-    });
-  } catch (err) {
-    console.error("Failed to send compliance review notification email:", err);
-  }
-
-  return NextResponse.json(updated);
+  return NextResponse.json(result?.flyer || flyer);
 }

@@ -144,8 +144,12 @@ export default function EditFlyerPage() {
         }),
       });
       if (!res.ok) throw new Error();
+      const updated = await res.json();
       toast.success(status === "SAVED" ? "Flyer saved!" : "Draft saved");
-      if (status === "SAVED" && redirect) router.push(`/dashboard/flyers/${id}/preview`);
+      if (status === "SAVED" && redirect) {
+        const query = updated.justSubmittedForReview ? "?submitted=1" : "";
+        router.push(`/dashboard/flyers/${id}/preview${query}`);
+      }
     } catch {
       toast.error("Failed to save");
     } finally {

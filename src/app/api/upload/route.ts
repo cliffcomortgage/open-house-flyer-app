@@ -51,9 +51,8 @@ export async function POST(req: NextRequest) {
 
     if (USE_LOCAL) {
       const publicUrl = await saveLocally(buffer, file.type, folder);
-      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
       return NextResponse.json({
-        publicUrl: `${baseUrl}${publicUrl}`,
+        publicUrl,
         uploadUrl: null,
       });
     }

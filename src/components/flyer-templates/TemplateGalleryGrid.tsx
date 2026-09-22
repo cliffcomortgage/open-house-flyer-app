@@ -34,6 +34,10 @@ export function TemplateGalleryGrid({
     .filter(Boolean)
     .join(" – ");
 
+  // lotSize may come from the Zillow lookup as "4,350 Square Feet" — split the
+  // number from its unit so the unit becomes the (small) label, not more big text.
+  const lotSizeMatch = propertyData.lotSize?.match(/^([\d,.]+)\s*(.*)$/);
+
   const stats = [
     propertyData.bedrooms ? { label: "Beds", value: propertyData.bedrooms } : null,
     propertyData.bathrooms ? { label: "Baths", value: propertyData.bathrooms } : null,
@@ -41,7 +45,12 @@ export function TemplateGalleryGrid({
       ? { label: "Sq Ft", value: propertyData.squareFeet.toLocaleString() }
       : null,
     propertyData.yearBuilt ? { label: "Year Built", value: propertyData.yearBuilt } : null,
-    propertyData.lotSize ? { label: "Lot Size", value: propertyData.lotSize } : null,
+    propertyData.lotSize
+      ? {
+          label: lotSizeMatch?.[2] || "Lot Size",
+          value: lotSizeMatch?.[1] || propertyData.lotSize,
+        }
+      : null,
     propertyData.garage ? { label: "Garage", value: propertyData.garage } : null,
     propertyData.stories ? { label: "Stories", value: propertyData.stories } : null,
     propertyData.units ? { label: "Units", value: propertyData.units } : null,
@@ -222,16 +231,16 @@ export function TemplateGalleryGrid({
         </div>
       )}
 
-      {/* Description */}
-      {propertyData.description && (
+      {/* Description — grows to fill remaining space */}
+      {propertyData.description ? (
         <div style={{ padding: "16px 36px 0", flex: 1, minHeight: 0, overflow: "hidden" }}>
           <div
             style={{
-              fontSize: "11px",
+              fontSize: `${propertyData.descriptionFontSize || 11}px`,
               color: "#64748b",
               lineHeight: "1.72",
               display: "-webkit-box",
-              WebkitLineClamp: 5,
+              WebkitLineClamp: 10,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
             }}
@@ -239,9 +248,9 @@ export function TemplateGalleryGrid({
             {propertyData.description}
           </div>
         </div>
+      ) : (
+        <div style={{ flex: 1 }} />
       )}
-
-      <div style={{ flex: 1 }} />
 
       <FlyerFooter
         loanOfficer={loanOfficer}

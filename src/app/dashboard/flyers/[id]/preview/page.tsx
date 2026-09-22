@@ -1,15 +1,26 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Pencil, Download, ChevronLeft, ZoomIn, ZoomOut, Share2, Check, ShieldCheck, Clock, ShieldAlert } from "lucide-react";
+import { Loader2, Pencil, Download, ChevronLeft, ZoomIn, ZoomOut, Share2, Check, ShieldCheck, Clock, ShieldAlert, Type, X } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { FlyerPreview } from "@/components/flyer-templates/FlyerPreview";
 import { generateQRCodeDataURL } from "@/lib/qr-code";
+import { cn } from "@/lib/utils";
 import type { Flyer, CompanySettings } from "@/types";
+
+const DESCRIPTION_FONT_SIZES = [
+  { label: "S", value: 10 },
+  { label: "M", value: 12 },
+  { label: "L", value: 14 },
+  { label: "XL", value: 16 },
+];
+const DEFAULT_DESCRIPTION_FONT_SIZE = 12;
 
 const APPROVAL_BADGE: Record<string, { label: string; className: string; icon: React.ElementType }> = {
   PENDING: { label: "Pending compliance review", className: "bg-amber-50 text-amber-700 border-amber-100", icon: Clock },
@@ -23,6 +34,7 @@ const DEFAULT_ZOOM = 0.65;
 export default function FlyerPreviewPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params.id as string;
 
   const [flyer, setFlyer] = useState<Flyer | null>(null);
@@ -30,9 +42,13 @@ export default function FlyerPreviewPage() {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [showSubmittedDialog, setShowSubmittedDialog] = useState(false);
   const [copied, setCopied] = useState(false);
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
+  const [isEditingText, setIsEditingText] = useState(false);
+  const [descriptionDraft, setDescriptionDraft] = useState("");
+  const [descriptionFontSizeDraft, setDescriptionFontSizeDraft] = useState(DEFAULT_DESCRIPTION_FONT_SIZE);
+  const [isSavingText, setIsSavingText] = useState(false);
   const viewportRef = useRef<HTMLDivElement>(null);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
@@ -85,6 +101,13 @@ export default function FlyerPreviewPage() {
     load();
   }, [id, router]);
 
+  useEffect(() => {
+    if (searchParams.get("submitted") === "1") {
+      setShowSubmittedDialog(true);
+      router.replace(`/dashboard/flyers/${id}/preview`);
+    }
+  }, [searchParams, id, router]);
+
   const handleCopyShare = async () => {
     if (!flyer?.shareToken) return;
     const url = `${window.location.origin}/share/${flyer.shareToken}`;
@@ -113,18 +136,39 @@ export default function FlyerPreviewPage() {
     }
   };
 
-  const handleSubmitForReview = async () => {
-    setIsSubmittingReview(true);
+  const openTextEditor = () => {
+    if (!flyer?.propertyData) return;
+    setDescriptionDraft(flyer.propertyData.description || "");
+    setDescriptionFontSizeDraft(
+      flyer.propertyData.descriptionFontSize || DEFAULT_DESCRIPTION_FONT_SIZE
+    );
+    setIsEditingText(true);
+  };
+
+  const handleSaveText = async () => {
+    if (!flyer?.propertyData) return;
+    setIsSavingText(true);
     try {
-      const res = await fetch(`/api/flyers/${id}/submit-review`, { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to submit for review");
-      setFlyer(data);
-      toast.success("Submitted for compliance review");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to submit for review");
+      const res = await fetch(`/api/flyers/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          propertyData: {
+            ...flyer.propertyData,
+            description: descriptionDraft || null,
+            descriptionFontSize: descriptionFontSizeDraft,
+          },
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const updated: Flyer = await res.json();
+      setFlyer(updated);
+      toast.success("Description updated");
+      setIsEditingText(false);
+    } catch {
+      toast.error("Failed to save changes");
     } finally {
-      setIsSubmittingReview(false);
+      setIsSavingText(false);
     }
   };
 
@@ -150,8 +194,6 @@ export default function FlyerPreviewPage() {
 
   const hasScenarios = (flyer.loanScenarios?.length ?? 0) > 0;
   const isLocked = hasScenarios && flyer.approvalStatus !== "APPROVED";
-  const canSubmitForReview =
-    hasScenarios && (flyer.approvalStatus === "NOT_SUBMITTED" || flyer.approvalStatus === "REJECTED");
   const badge = hasScenarios ? APPROVAL_BADGE[flyer.approvalStatus] : null;
   const lockedTitle = "This flyer includes loan scenarios pending compliance approval";
 
@@ -186,16 +228,15 @@ export default function FlyerPreviewPage() {
               Edit
             </Link>
           </Button>
-          {canSubmitForReview && (
-            <Button variant="outline" onClick={handleSubmitForReview} disabled={isSubmittingReview}>
-              {isSubmittingReview ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <ShieldCheck className="w-4 h-4 mr-2" />
-              )}
-              Submit for Approval
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            onClick={() => (isEditingText ? setIsEditingText(false) : openTextEditor())}
+            disabled={isLocked}
+            title={isLocked ? lockedTitle : undefined}
+          >
+            <Type className="w-4 h-4 mr-2" />
+            Edit Text
+          </Button>
           {flyer?.shareToken && (
             <Button variant="outline" onClick={handleCopyShare} disabled={isLocked} title={isLocked ? lockedTitle : undefined}>
               {copied ? (
@@ -227,6 +268,56 @@ export default function FlyerPreviewPage() {
         <div className="mb-5 rounded-lg border border-red-100 bg-red-50 p-4 text-sm text-red-700">
           <p className="font-semibold mb-1">Compliance requested changes:</p>
           <p>{flyer.reviewNotes}</p>
+        </div>
+      )}
+
+      {isEditingText && (
+        <div className="mb-5 rounded-lg border border-slate-200 bg-white p-4 max-w-2xl mx-auto">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-slate-900">Edit description</p>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsEditingText(false)}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          <Textarea
+            value={descriptionDraft}
+            onChange={(e) => setDescriptionDraft(e.target.value)}
+            rows={6}
+            placeholder="Property description shown on the flyer"
+            className="text-sm"
+          />
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500">Text size</span>
+              <div className="flex rounded-md border border-slate-200 overflow-hidden">
+                {DESCRIPTION_FONT_SIZES.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setDescriptionFontSizeDraft(opt.value)}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-medium border-r border-slate-200 last:border-r-0",
+                      descriptionFontSizeDraft === opt.value
+                        ? "bg-slate-900 text-white"
+                        : "bg-white text-slate-600 hover:bg-slate-50"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Button
+              size="sm"
+              style={{ backgroundColor: "#6633cc" }}
+              className="text-white"
+              onClick={handleSaveText}
+              disabled={isSavingText}
+            >
+              {isSavingText ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Save
+            </Button>
+          </div>
         </div>
       )}
 
@@ -279,6 +370,24 @@ export default function FlyerPreviewPage() {
           />
         </div>
       </div>
+
+      <Dialog open={showSubmittedDialog} onOpenChange={setShowSubmittedDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-emerald-600" />
+              Submitted for compliance review
+            </DialogTitle>
+            <DialogDescription>
+              The compliance and marketing team has been notified to review your flyer. No further
+              action is needed. Please allow 24 hours for approval.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowSubmittedDialog(false)}>Got it</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

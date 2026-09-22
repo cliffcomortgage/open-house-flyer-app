@@ -383,16 +383,23 @@ function PropertyStep({
 function RealtorStep({
   selectedId,
   onSelect,
+  onAddRealtor,
+  savingDraft,
 }: {
   selectedId: string | null;
   onSelect: (id: string | null) => void;
+  onAddRealtor: () => void;
+  savingDraft: boolean;
 }) {
   const [realtors, setRealtors] = useState<Realtor[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/realtors")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to load realtors");
+        return r.json();
+      })
       .then((data) => { setRealtors(data); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
@@ -459,10 +466,15 @@ function RealtorStep({
       {realtors.length === 0 && (
         <p className="text-sm text-slate-500 text-center mt-4">
           No realtors yet.{" "}
-          <a href="/dashboard/realtors/new" className="text-blue-600 hover:underline">
+          <button
+            type="button"
+            onClick={onAddRealtor}
+            disabled={savingDraft}
+            className="text-blue-600 hover:underline disabled:opacity-50"
+          >
             Add a realtor
-          </a>{" "}
-          to co-brand flyers.
+          </button>{" "}
+          to co-brand flyers. Your progress on this flyer will be saved as a draft.
         </p>
       )}
     </div>
@@ -902,12 +914,42 @@ export default function NewFlyerPage() {
       const flyer = await res.json();
       toast.success(status === "SAVED" ? "Flyer saved!" : "Draft saved");
       if (status === "SAVED") {
-        router.push(`/dashboard/flyers/${flyer.id}/preview`);
+        const query = flyer.justSubmittedForReview ? "?submitted=1" : "";
+        router.push(`/dashboard/flyers/${flyer.id}/preview${query}`);
       } else {
         router.push(`/dashboard/flyers/${flyer.id}/edit`);
       }
     } catch {
       toast.error("Failed to save flyer");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const saveDraftAndNavigate = async (path: string) => {
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/flyers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          templateId,
+          propertyData,
+          realtorId,
+          loanScenarios: hasFinancing ? scenarios : [],
+          qrCodeData: qrUrl || null,
+          status: "DRAFT",
+          distributionState: distributionState || null,
+          title: propertyData.address
+            ? `${propertyData.address}, ${propertyData.city}`
+            : null,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Progress saved as a draft — find it under My Flyers to continue.");
+      router.push(path);
+    } catch {
+      toast.error("Failed to save your progress. Add the realtor from another tab to avoid losing this flyer.");
     } finally {
       setIsSaving(false);
     }
@@ -920,7 +962,13 @@ export default function NewFlyerPage() {
       data={propertyData}
       onChange={(patch) => setPropertyData((prev) => ({ ...prev, ...patch }))}
     />,
-    <RealtorStep key="realtor" selectedId={realtorId} onSelect={setRealtorId} />,
+    <RealtorStep
+      key="realtor"
+      selectedId={realtorId}
+      onSelect={setRealtorId}
+      onAddRealtor={() => saveDraftAndNavigate("/dashboard/realtors/new")}
+      savingDraft={isSaving}
+    />,
     ...(hasFinancing
       ? [
           <FinancingStep

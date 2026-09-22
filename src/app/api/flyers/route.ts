@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { generateShareToken } from "@/lib/utils";
 import { getSessionLoanOfficerId } from "@/lib/session-lo";
+import { autoSubmitForComplianceReview } from "@/lib/compliance";
 
 export async function GET() {
   const session = await auth();
@@ -64,5 +65,13 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json(flyer, { status: 201 });
+  const result = await autoSubmitForComplianceReview(
+    flyer.id,
+    process.env.NEXTAUTH_URL || req.nextUrl.origin
+  );
+
+  return NextResponse.json(
+    { ...(result?.flyer || flyer), justSubmittedForReview: result?.justSubmitted || false },
+    { status: 201 }
+  );
 }

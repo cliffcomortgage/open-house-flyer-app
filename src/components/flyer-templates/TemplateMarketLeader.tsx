@@ -417,47 +417,50 @@ export function TemplateMarketLeader({
 
       {/* Scenarios or description */}
       {scenarios.length > 0 ? (
-        <div style={{ padding: "18px 36px 0", flexShrink: 0 }}>
-          <div
-            style={{
-              fontSize: "9px",
-              fontWeight: 700,
-              color: "#94a3b8",
-              textTransform: "uppercase",
-              letterSpacing: "0.16em",
-              marginBottom: "12px",
-            }}
-          >
-            Financing Options
+        <>
+          <div style={{ padding: "18px 36px 0", flexShrink: 0 }}>
+            <div
+              style={{
+                fontSize: "9px",
+                fontWeight: 700,
+                color: "#94a3b8",
+                textTransform: "uppercase",
+                letterSpacing: "0.16em",
+                marginBottom: "12px",
+              }}
+            >
+              Financing Options
+            </div>
+            <div style={{ display: "flex", gap: "10px" }}>
+              {scenarios.map((s, idx) => (
+                <ScenarioColumn key={idx} scenario={s} primaryColor={primaryColor} />
+              ))}
+              {scenarios.length === 1 && <div style={{ flex: 2 }} />}
+              {scenarios.length === 2 && <div style={{ flex: 1 }} />}
+            </div>
+            <p
+              style={{
+                fontSize: "7.5px",
+                color: "#94a3b8",
+                marginTop: "8px",
+                lineHeight: "1.4",
+              }}
+            >
+              *Rates shown for illustrative purposes only. Actual rates may vary. Contact your loan
+              officer for a personalized quote.
+            </p>
           </div>
-          <div style={{ display: "flex", gap: "10px" }}>
-            {scenarios.map((s, idx) => (
-              <ScenarioColumn key={idx} scenario={s} primaryColor={primaryColor} />
-            ))}
-            {scenarios.length === 1 && <div style={{ flex: 2 }} />}
-            {scenarios.length === 2 && <div style={{ flex: 1 }} />}
-          </div>
-          <p
-            style={{
-              fontSize: "7.5px",
-              color: "#94a3b8",
-              marginTop: "8px",
-              lineHeight: "1.4",
-            }}
-          >
-            *Rates shown for illustrative purposes only. Actual rates may vary. Contact your loan
-            officer for a personalized quote.
-          </p>
-        </div>
+          <div style={{ flex: 1 }} />
+        </>
       ) : propertyData.description ? (
         <div style={{ padding: "18px 36px 0", flex: 1, minHeight: 0, overflow: "hidden" }}>
           <div
             style={{
-              fontSize: "12px",
+              fontSize: `${propertyData.descriptionFontSize || 12}px`,
               color: "#475569",
               lineHeight: "1.72",
               display: "-webkit-box",
-              WebkitLineClamp: 9,
+              WebkitLineClamp: 16,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
             }}
@@ -468,8 +471,6 @@ export function TemplateMarketLeader({
       ) : (
         <div style={{ flex: 1 }} />
       )}
-
-      <div style={{ flex: 1 }} />
 
       <FlyerFooter
         loanOfficer={loanOfficer}

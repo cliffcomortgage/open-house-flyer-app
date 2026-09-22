@@ -228,14 +228,15 @@ export function TemplateShowcaseOneRate({
         </div>
       </div>
 
-      {/* Stats + description */}
-      <div style={{ padding: "18px 36px 0", flexShrink: 0 }}>
+      {/* Stats + description — grows to fill remaining space */}
+      <div style={{ padding: "18px 36px 0", flex: 1, minHeight: 0, overflow: "hidden" }}>
         <div
           style={{
             display: "flex",
             gap: "24px",
             borderTop: "1px solid #e2e8f0",
             paddingTop: "16px",
+            height: "100%",
           }}
         >
           {stats.length > 0 && (
@@ -280,15 +281,19 @@ export function TemplateShowcaseOneRate({
             <div
               style={{
                 flex: 1,
-                fontSize: "11px",
+                minWidth: 0,
+                fontSize: `${propertyData.descriptionFontSize || 11}px`,
                 color: "#64748b",
                 lineHeight: "1.70",
                 borderLeft: stats.length > 0 ? "1px solid #e2e8f0" : "none",
                 paddingLeft: stats.length > 0 ? "20px" : "0",
+                display: "-webkit-box",
+                WebkitLineClamp: 14,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
               }}
             >
-              {propertyData.description.slice(0, 220)}
-              {propertyData.description.length > 220 ? "…" : ""}
+              {propertyData.description}
             </div>
           )}
         </div>
@@ -494,8 +499,6 @@ export function TemplateShowcaseOneRate({
           </p>
         </div>
       )}
-
-      <div style={{ flex: 1 }} />
 
       <FlyerFooter
         loanOfficer={loanOfficer}

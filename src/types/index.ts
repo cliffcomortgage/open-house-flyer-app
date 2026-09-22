@@ -81,6 +81,7 @@ export interface PropertyData {
   stories: number | null;
   units: number | null;
   description: string | null;
+  descriptionFontSize: number | null;
   photos: string[];
   mlsNumber: string | null;
   openHouseDate: string | null;

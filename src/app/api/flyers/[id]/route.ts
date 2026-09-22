@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getSessionLoanOfficerId } from "@/lib/session-lo";
+import { autoSubmitForComplianceReview } from "@/lib/compliance";
 
 async function getOwnedFlyer(flyerId: string, loId: string) {
   return prisma.flyer.findFirst({
@@ -81,7 +82,15 @@ export async function PUT(
     },
   });
 
-  return NextResponse.json(updated);
+  const result = await autoSubmitForComplianceReview(
+    id,
+    process.env.NEXTAUTH_URL || req.nextUrl.origin
+  );
+
+  return NextResponse.json({
+    ...(result?.flyer || updated),
+    justSubmittedForReview: result?.justSubmitted || false,
+  });
 }
 
 export async function DELETE(

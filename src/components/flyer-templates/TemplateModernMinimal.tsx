@@ -229,16 +229,16 @@ export function TemplateModernMinimal({
         </div>
       )}
 
-      {/* Description — plain paragraph */}
-      {propertyData.description && (
+      {/* Description — plain paragraph, grows to fill remaining space */}
+      {propertyData.description ? (
         <div style={{ padding: "20px 36px 0", flex: 1, minHeight: 0, overflow: "hidden" }}>
           <div
             style={{
-              fontSize: "12px",
+              fontSize: `${propertyData.descriptionFontSize || 12}px`,
               color: "#475569",
               lineHeight: "1.78",
               display: "-webkit-box",
-              WebkitLineClamp: 7,
+              WebkitLineClamp: 14,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
             }}
@@ -246,9 +246,9 @@ export function TemplateModernMinimal({
             {propertyData.description}
           </div>
         </div>
+      ) : (
+        <div style={{ flex: 1 }} />
       )}
-
-      <div style={{ flex: 1 }} />
 
       <FlyerFooter
         loanOfficer={loanOfficer}
