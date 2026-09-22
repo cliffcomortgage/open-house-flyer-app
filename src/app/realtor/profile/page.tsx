@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChangePasswordCard } from "@/components/change-password-card";
 import { cn } from "@/lib/utils";
 import type { Realtor } from "@/types";
 
@@ -208,6 +209,10 @@ export default function RealtorProfilePage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">My Profile</h1>
         <p className="text-sm text-slate-500 mt-1">Your information appears on the listing flyers you create.</p>
+      </div>
+
+      <div className="mb-6">
+        <ChangePasswordCard />
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

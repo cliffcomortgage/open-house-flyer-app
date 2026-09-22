@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChangePasswordCard } from "@/components/change-password-card";
 import { cn, isLightColor } from "@/lib/utils";
 import { US_STATES } from "@/lib/us-states";
 import type { CompanySettings } from "@/types";
@@ -239,6 +240,10 @@ export default function AdminSettingsPage() {
         <p className="text-sm text-slate-500 mt-1">
           These settings appear across all flyers created by your loan officers.
         </p>
+      </div>
+
+      <div className="mb-6">
+        <ChangePasswordCard />
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

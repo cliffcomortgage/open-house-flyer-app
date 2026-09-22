@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChangePasswordCard } from "@/components/change-password-card";
 import { cn } from "@/lib/utils";
 import type { LoanOfficer } from "@/types";
 
@@ -163,6 +164,10 @@ export default function ProfilePage() {
         <p className="text-sm text-slate-500 mt-1">
           Your information appears on all flyers you create.
         </p>
+      </div>
+
+      <div className="mb-6">
+        <ChangePasswordCard />
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
