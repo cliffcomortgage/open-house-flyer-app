@@ -272,21 +272,24 @@ export function FlyerFooter({
 
       {/* ── Compliance block: MLS/license line, then disclaimer — one flowing block, no borders/backgrounds ── */}
       <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "3px" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <MLSBadge />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: "7px", color: "#64748b", lineHeight: "1.2", margin: 0 }}>
+            <p style={{ fontSize: "7px", color: "#64748b", lineHeight: "1.1", margin: 0 }}>
               Each office is independently owned and operated. If your home is currently listed for
-              sale with a real estate agent, disregard this notice. It is not our intent to solicit
-              the offerings of other brokers.
+              sale with a real estate agent,
             </p>
-            {showLicenseLine && (
-              <p style={{ fontSize: "7px", color: "#64748b", lineHeight: "1.4", margin: "2px 0 0" }}>
-                {company.licenseText}
-                {company.licenseText && loanOfficer.branchNmls ? "  |  " : ""}
-                {loanOfficer.branchNmls && `Branch NMLS# ${loanOfficer.branchNmls}`}
-              </p>
-            )}
+            <p style={{ fontSize: "7px", color: "#64748b", lineHeight: "1.1", margin: "1px 0 0" }}>
+              disregard this notice. It is not our intent to solicit the offerings of other brokers.
+              {showLicenseLine && (
+                <>
+                  {" "}
+                  {company.licenseText}
+                  {company.licenseText && loanOfficer.branchNmls ? "  |  " : ""}
+                  {loanOfficer.branchNmls && `Branch NMLS# ${loanOfficer.branchNmls}`}
+                </>
+              )}
+            </p>
           </div>
         </div>
 
