@@ -76,6 +76,22 @@ export async function sendLoanOfficerWelcomeEmail(params: {
   });
 }
 
+export async function sendPasswordResetEmail(params: {
+  toEmail: string;
+  name: string;
+  resetToken: string;
+  baseUrl: string;
+}): Promise<void> {
+  const resetUrl = `${params.baseUrl}/set-password?token=${params.resetToken}`;
+
+  await sendEmail({
+    to: [params.toEmail],
+    subject: "Reset your Cliffco Open House Flyer App password",
+    textBody: `Hi ${params.name},\n\nWe received a request to reset your password. Choose a new password here:\n\n${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, you can safely ignore this email.`,
+    htmlBody: `<p>Hi ${params.name},</p><p>We received a request to reset your password. Choose a new password here:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>`,
+  });
+}
+
 export async function sendRealtorInviteEmail(params: {
   toEmail: string;
   realtorName: string;

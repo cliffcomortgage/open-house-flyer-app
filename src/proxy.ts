@@ -17,10 +17,11 @@ export default auth((req) => {
   const isSharePage = nextUrl.pathname.startsWith("/share") || nextUrl.pathname.startsWith("/api/share");
   const isApiAuth = nextUrl.pathname.startsWith("/api/auth");
   const isSetPasswordPage = nextUrl.pathname.startsWith("/set-password");
+  const isForgotPasswordPage = nextUrl.pathname.startsWith("/forgot-password");
   const isUploadsPath = nextUrl.pathname.startsWith("/uploads");
   const isHealthCheck = nextUrl.pathname === "/api/health";
 
-  if (isApiAuth || isSharePage || isSetPasswordPage || isUploadsPath || isHealthCheck) return NextResponse.next();
+  if (isApiAuth || isSharePage || isSetPasswordPage || isForgotPasswordPage || isUploadsPath || isHealthCheck) return NextResponse.next();
 
   const homeForSession = () =>
     isAdmin && !isImpersonating ? "/admin" : isRealtor ? "/realtor" : "/dashboard";
