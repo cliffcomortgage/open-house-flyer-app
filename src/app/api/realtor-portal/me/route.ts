@@ -50,6 +50,18 @@ export async function PUT(req: NextRequest) {
     headshotUrl, companyLogoUrl, brandPrimary, brandSecondary,
   } = body;
 
+  const required: Record<string, unknown> = {
+    firstName, lastName, title, companyName,
+    officePhone, officeStreet, officeCity, officeState, officeZip,
+  };
+  const missing = Object.entries(required).filter(([, v]) => !v || !String(v).trim());
+  if (missing.length > 0) {
+    return NextResponse.json(
+      { error: `Missing required field(s): ${missing.map(([k]) => k).join(", ")}` },
+      { status: 400 }
+    );
+  }
+
   const officeAddress = assembleOfficeAddress(officeStreet, officeSuite, officeCity, officeState, officeZip);
 
   const updated = await prisma.realtor.update({

@@ -20,17 +20,17 @@ import { cn } from "@/lib/utils";
 const realtorSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  title: z.string().min(1, "Required"),
+  title: z.string().min(1, "Title is required"),
   companyName: z.string().min(1, "Company name is required"),
-  officePhone: z.string().optional(),
+  officePhone: z.string().min(1, "Office phone is required"),
   cellPhone: z.string().optional(),
   email: z.string().email("Invalid email").optional().or(z.literal("")),
   website: z.string().optional().or(z.literal("")),
-  officeStreet: z.string().optional(),
+  officeStreet: z.string().min(1, "Street address is required"),
   officeSuite: z.string().optional(),
-  officeCity: z.string().optional(),
-  officeState: z.string().optional(),
-  officeZip: z.string().optional(),
+  officeCity: z.string().min(1, "City is required"),
+  officeState: z.string().min(1, "State is required"),
+  officeZip: z.string().min(1, "ZIP is required"),
   brandPrimary: z.string().optional(),
   brandSecondary: z.string().optional(),
 });
@@ -42,11 +42,13 @@ function ImageDropzone({
   value,
   onChange,
   folder,
+  hint,
 }: {
   label: string;
   value: string | null;
   onChange: (url: string | null) => void;
   folder: string;
+  hint?: string;
 }) {
   const [uploading, setUploading] = useState(false);
 
@@ -117,7 +119,7 @@ function ImageDropzone({
               <p className="text-xs text-slate-500">
                 {isDragActive ? "Drop here" : "Drag & drop or click to upload"}
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">JPG, PNG, WebP · Max 5MB</p>
+              <p className="text-xs text-slate-400 mt-0.5">{hint || "JPG, PNG, WebP · Max 5MB"}</p>
             </>
           )}
         </div>
@@ -249,9 +251,15 @@ export default function NewRealtorPage() {
             </div>
             <div>
               <Label htmlFor="title" className="text-sm font-medium text-slate-700 mb-1.5 block">
-                Title
+                Title <span className="text-red-500">*</span>
               </Label>
-              <Input id="title" className="h-9" placeholder="Realtor" {...register("title")} />
+              <Input
+                id="title"
+                className={cn("h-9", errors.title && "border-red-400")}
+                placeholder="Realtor"
+                {...register("title")}
+              />
+              {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -262,9 +270,17 @@ export default function NewRealtorPage() {
               </div>
               <div>
                 <Label htmlFor="officePhone" className="text-sm font-medium text-slate-700 mb-1.5 block">
-                  Office phone
+                  Office phone <span className="text-red-500">*</span>
                 </Label>
-                <Input id="officePhone" className="h-9" placeholder="(555) 000-0000" {...register("officePhone")} />
+                <Input
+                  id="officePhone"
+                  className={cn("h-9", errors.officePhone && "border-red-400")}
+                  placeholder="(555) 000-0000"
+                  {...register("officePhone")}
+                />
+                {errors.officePhone && (
+                  <p className="text-red-500 text-xs mt-1">{errors.officePhone.message}</p>
+                )}
               </div>
             </div>
             <div>
@@ -293,16 +309,54 @@ export default function NewRealtorPage() {
               />
             </div>
             <div>
-              <Label className="text-sm font-medium text-slate-700 mb-1.5 block">Office address</Label>
+              <Label className="text-sm font-medium text-slate-700 mb-1.5 block">
+                Office address <span className="text-red-500">*</span>
+              </Label>
               <div className="space-y-2">
-                <Input className="h-9" placeholder="Street address" {...register("officeStreet")} />
-                <div className="grid grid-cols-3 gap-2">
-                  <Input className="h-9" placeholder="Suite #" {...register("officeSuite")} />
-                  <Input className="h-9 col-span-2" placeholder="City" {...register("officeCity")} />
+                <div>
+                  <Input
+                    className={cn("h-9", errors.officeStreet && "border-red-400")}
+                    placeholder="Street address"
+                    {...register("officeStreet")}
+                  />
+                  {errors.officeStreet && (
+                    <p className="text-red-500 text-xs mt-1">{errors.officeStreet.message}</p>
+                  )}
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <Input className="h-9" placeholder="State" {...register("officeState")} />
-                  <Input className="h-9 col-span-2" placeholder="ZIP" {...register("officeZip")} />
+                  <Input className="h-9" placeholder="Suite #" {...register("officeSuite")} />
+                  <div className="col-span-2">
+                    <Input
+                      className={cn("h-9", errors.officeCity && "border-red-400")}
+                      placeholder="City"
+                      {...register("officeCity")}
+                    />
+                    {errors.officeCity && (
+                      <p className="text-red-500 text-xs mt-1">{errors.officeCity.message}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Input
+                      className={cn("h-9", errors.officeState && "border-red-400")}
+                      placeholder="State"
+                      {...register("officeState")}
+                    />
+                    {errors.officeState && (
+                      <p className="text-red-500 text-xs mt-1">{errors.officeState.message}</p>
+                    )}
+                  </div>
+                  <div className="col-span-2">
+                    <Input
+                      className={cn("h-9", errors.officeZip && "border-red-400")}
+                      placeholder="ZIP"
+                      {...register("officeZip")}
+                    />
+                    {errors.officeZip && (
+                      <p className="text-red-500 text-xs mt-1">{errors.officeZip.message}</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -432,12 +486,14 @@ export default function NewRealtorPage() {
                 value={headshotUrl}
                 onChange={setHeadshotUrl}
                 folder="headshots"
+                hint="At least 400×400px, square · JPG, PNG, WebP · Max 5MB"
               />
               <ImageDropzone
                 label="Company Logo"
                 value={companyLogoUrl}
                 onChange={setCompanyLogoUrl}
                 folder="logos"
+                hint="At least 400px wide · Transparent PNG preferred · Max 5MB"
               />
             </div>
           </CardContent>

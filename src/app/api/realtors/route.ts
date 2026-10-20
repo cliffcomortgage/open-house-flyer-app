@@ -56,6 +56,18 @@ export async function POST(req: NextRequest) {
     headshotUrl, companyLogoUrl, brandPrimary, brandSecondary,
   } = body;
 
+  const required: Record<string, unknown> = {
+    firstName, lastName, title, companyName,
+    officePhone, officeStreet, officeCity, officeState, officeZip,
+  };
+  const missing = Object.entries(required).filter(([, v]) => !v || !String(v).trim());
+  if (missing.length > 0) {
+    return NextResponse.json(
+      { error: `Missing required field(s): ${missing.map(([k]) => k).join(", ")}` },
+      { status: 400 }
+    );
+  }
+
   let primary = brandPrimary || null;
   let secondary = brandSecondary || null;
   if (!primary && companyName) {
