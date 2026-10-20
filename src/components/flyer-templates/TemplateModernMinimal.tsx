@@ -93,7 +93,7 @@ export function TemplateModernMinimal({
               lineHeight: 1,
             }}
           >
-            Open House
+            {propertyData.headline || "Open House"}
           </div>
           {(formattedDate || propertyData.city) && (
             <div style={{ fontSize: "13px", color: "#334155", marginTop: "8px", fontWeight: 600 }}>

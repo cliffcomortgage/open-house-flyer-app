@@ -20,6 +20,9 @@ function EHLLogo() {
   );
 }
 
+// Left edge lines up with the EHL-logo column's text start below (26px logo + 6px gap).
+const MLS_BADGE_INDENT = 32;
+
 function MLSBadge() {
   return (
     <img
@@ -31,6 +34,7 @@ function MLSBadge() {
         objectFit: "contain",
         alignSelf: "flex-start",
         marginTop: "1px",
+        marginLeft: `${MLS_BADGE_INDENT}px`,
       }}
     />
   );
@@ -226,7 +230,7 @@ export function FlyerFooter({
     .join("  ·  ");
 
   return (
-    <div style={{ flexShrink: 0, background: "#ffffff", padding: "12px 22px 8px" }}>
+    <div style={{ flexShrink: 0, background: "#ffffff", padding: "8px 22px 8px" }}>
       {/* ── Agent row: [LO] [QR] [Realtor] — no dividers, spacing only ── */}
       <div style={{ display: "flex", gap: "18px", alignItems: "flex-start" }}>
         <AgentCard
@@ -267,11 +271,11 @@ export function FlyerFooter({
       </div>
 
       {/* ── Compliance block: MLS/license line, then disclaimer — one flowing block, no borders/backgrounds ── */}
-      <div style={{ marginTop: "6px", display: "flex", flexDirection: "column", gap: "3px" }}>
+      <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "3px" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
           <MLSBadge />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: "7px", color: "#64748b", lineHeight: "1.4", margin: 0 }}>
+            <p style={{ fontSize: "7px", color: "#64748b", lineHeight: "1.2", margin: 0 }}>
               Each office is independently owned and operated. If your home is currently listed for
               sale with a real estate agent, disregard this notice. It is not our intent to solicit
               the offerings of other brokers.

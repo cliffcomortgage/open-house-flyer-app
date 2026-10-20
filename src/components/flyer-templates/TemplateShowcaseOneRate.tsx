@@ -149,7 +149,7 @@ export function TemplateShowcaseOneRate({
                 fontWeight: 700,
               }}
             >
-              Open House
+              {propertyData.headline || "Open House"}
             </span>
           </div>
         )}
@@ -218,7 +218,7 @@ export function TemplateShowcaseOneRate({
                   letterSpacing: "0.14em",
                 }}
               >
-                Open House
+                {propertyData.headline || "Open House"}
               </div>
               <div
                 style={{ fontSize: "15px", fontWeight: 800, color: "#0f172a", marginTop: "4px" }}
@@ -308,7 +308,7 @@ export function TemplateShowcaseOneRate({
 
       {/* Loan scenario — white, editorial. Fixed to its natural size so rows are never mid-clipped */}
       {scenario && (
-        <div style={{ padding: "14px 36px 0", flexShrink: 0 }}>
+        <div style={{ padding: "8px 36px 0", flexShrink: 0 }}>
           <div
             style={{
               fontSize: "9px",

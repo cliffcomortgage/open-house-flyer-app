@@ -101,7 +101,7 @@ export function TemplateGalleryGrid({
               textTransform: "uppercase",
             }}
           >
-            Open House
+            {propertyData.headline || "Open House"}
           </div>
           {(formattedDate || propertyData.city) && (
             <div style={{ fontSize: "13px", color: "#475569", marginTop: "4px", fontWeight: 400 }}>

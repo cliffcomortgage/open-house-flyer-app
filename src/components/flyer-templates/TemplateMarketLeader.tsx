@@ -247,7 +247,7 @@ export function TemplateMarketLeader({
                 textTransform: "uppercase",
               }}
             >
-              Open House
+              {propertyData.headline || "Open House"}
             </div>
             {(formattedDate || propertyData.city) && (
               <div
@@ -431,7 +431,7 @@ export function TemplateMarketLeader({
       {/* Scenarios or description */}
       {scenarios.length > 0 ? (
         <>
-          <div style={{ padding: "18px 36px 0", flexShrink: 0 }}>
+          <div style={{ padding: "10px 36px 0", flexShrink: 0 }}>
             <div
               style={{
                 fontSize: "9px",

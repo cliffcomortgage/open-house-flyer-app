@@ -80,6 +80,7 @@ export interface PropertyData {
   propertyUse: string | null;
   stories: number | null;
   units: number | null;
+  headline: string | null;
   description: string | null;
   descriptionFontSize: number | null;
   photos: string[];

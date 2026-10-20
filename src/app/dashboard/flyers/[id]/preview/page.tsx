@@ -7,6 +7,8 @@ import { Loader2, Pencil, Download, ChevronLeft, ZoomIn, ZoomOut, Share2, Check,
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { FlyerPreview } from "@/components/flyer-templates/FlyerPreview";
@@ -47,6 +49,7 @@ export default function FlyerPreviewPage() {
   const [copied, setCopied] = useState(false);
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [isEditingText, setIsEditingText] = useState(false);
+  const [headlineDraft, setHeadlineDraft] = useState("");
   const [descriptionDraft, setDescriptionDraft] = useState("");
   const [descriptionFontSizeDraft, setDescriptionFontSizeDraft] = useState(DEFAULT_DESCRIPTION_FONT_SIZE);
   const [isSavingText, setIsSavingText] = useState(false);
@@ -140,6 +143,7 @@ export default function FlyerPreviewPage() {
 
   const openTextEditor = () => {
     if (!flyer?.propertyData) return;
+    setHeadlineDraft(flyer.propertyData.headline || "Open House");
     setDescriptionDraft(flyer.propertyData.description || "");
     setDescriptionFontSizeDraft(
       flyer.propertyData.descriptionFontSize || DEFAULT_DESCRIPTION_FONT_SIZE
@@ -157,6 +161,7 @@ export default function FlyerPreviewPage() {
         body: JSON.stringify({
           propertyData: {
             ...flyer.propertyData,
+            headline: headlineDraft || null,
             description: descriptionDraft || null,
             descriptionFontSize: descriptionFontSizeDraft,
           },
@@ -306,12 +311,28 @@ export default function FlyerPreviewPage() {
       {isEditingText && (
         <div className="mb-5 rounded-lg border border-slate-200 bg-white p-4 max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-slate-900">Edit description</p>
+            <p className="text-sm font-semibold text-slate-900">Edit text</p>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsEditingText(false)}>
               <X className="w-4 h-4" />
             </Button>
           </div>
+          <div className="mb-3">
+            <Label htmlFor="headline" className="text-xs font-medium text-slate-600 mb-1.5 block">
+              Headline
+            </Label>
+            <Input
+              id="headline"
+              value={headlineDraft}
+              onChange={(e) => setHeadlineDraft(e.target.value)}
+              placeholder="Open House"
+              className="text-sm"
+            />
+          </div>
+          <Label htmlFor="description" className="text-xs font-medium text-slate-600 mb-1.5 block">
+            Description
+          </Label>
           <Textarea
+            id="description"
             value={descriptionDraft}
             onChange={(e) => setDescriptionDraft(e.target.value)}
             rows={6}
