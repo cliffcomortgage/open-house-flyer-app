@@ -14,7 +14,10 @@ export default auth((req) => {
   const isAdminPage = nextUrl.pathname.startsWith("/admin");
   const isDashboardPage = nextUrl.pathname.startsWith("/dashboard");
   const isRealtorPage = nextUrl.pathname.startsWith("/realtor");
-  const isSharePage = nextUrl.pathname.startsWith("/share") || nextUrl.pathname.startsWith("/api/share");
+  const isSharePage =
+    nextUrl.pathname.startsWith("/share") ||
+    nextUrl.pathname.startsWith("/api/share") ||
+    nextUrl.pathname.startsWith("/print/share");
   const isApiAuth = nextUrl.pathname.startsWith("/api/auth");
   const isSetPasswordPage = nextUrl.pathname.startsWith("/set-password");
   const isForgotPasswordPage = nextUrl.pathname.startsWith("/forgot-password");
