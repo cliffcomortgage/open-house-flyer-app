@@ -1,7 +1,7 @@
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Shield, UserCog, Settings, ChevronRight, ClipboardList } from "lucide-react";
+import { Shield, UserCog, Settings, ChevronRight, ClipboardList, BarChart3 } from "lucide-react";
 import { prisma } from "@/lib/db";
 
 export default async function AdminLayout({
@@ -49,6 +49,13 @@ export default async function AdminLayout({
           >
             <Settings className="w-3 h-3" />
             Company Settings
+          </Link>
+          <Link
+            href="/admin/analytics"
+            className="flex items-center gap-1 text-xs text-white/70 hover:text-white px-2 py-1 rounded hover:bg-white/10 transition-colors"
+          >
+            <BarChart3 className="w-3 h-3" />
+            Analytics
           </Link>
           <Link
             href="/admin/compliance"

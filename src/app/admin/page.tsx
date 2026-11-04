@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Users, FileText, UserCheck, UserCog, Settings, ChevronRight } from "lucide-react";
+import { Users, FileText, UserCheck, UserCog, Settings, ChevronRight, BarChart3 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -82,6 +82,21 @@ export default async function AdminPage() {
             <h3 className="font-semibold text-slate-900">Loan Officers</h3>
             <p className="text-sm text-slate-500 mt-0.5">
               Add, edit, activate, or deactivate loan officer accounts.
+            </p>
+          </div>
+        </Link>
+
+        <Link href="/admin/analytics">
+          <div className="group bg-white rounded-xl border border-slate-200 p-5 hover:shadow-sm transition-shadow cursor-pointer">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-purple-600" />
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
+            </div>
+            <h3 className="font-semibold text-slate-900">Analytics</h3>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Login activity, flyer output, and realtor adoption per loan officer.
             </p>
           </div>
         </Link>

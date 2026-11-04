@@ -19,9 +19,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) {
+      if (user?.id) {
         token.role = (user as any).role;
         token.userId = user.id;
+        // `user` is only populated on an actual sign-in, not on every
+        // session check, so this records exactly one event per login.
+        await prisma.loginEvent.create({ data: { userId: user.id } }).catch((err) => {
+          console.error("Failed to record login event:", err);
+        });
       }
       return token;
     },
