@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
       companyName,
       officePhone: officePhone || null,
       cellPhone: cellPhone || null,
-      email: email || null,
+      email: email ? email.trim().toLowerCase() : null,
       website: website || null,
       officeAddress,
       officeStreet: officeStreet || null,

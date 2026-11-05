@@ -34,7 +34,11 @@ export async function POST(
     );
   }
 
-  const existingUser = await prisma.user.findUnique({ where: { email: realtor.email } });
+  const normalizedEmail = realtor.email.trim().toLowerCase();
+
+  const existingUser = await prisma.user.findFirst({
+    where: { email: { equals: normalizedEmail, mode: "insensitive" } },
+  });
   if (existingUser) {
     return NextResponse.json(
       { error: "An account with this email already exists" },
@@ -48,7 +52,7 @@ export async function POST(
   const updated = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: {
-        email: realtor.email!,
+        email: normalizedEmail,
         password: null,
         role: "REALTOR",
         isActive: true,

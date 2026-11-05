@@ -51,11 +51,14 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const {
-    email, firstName, lastName, title,
+    firstName, lastName, title,
     nmlsNumber, officePhone, cellPhone, website,
     branchStreet, branchSuite, branchCity, branchState, branchZip,
     branchNmls, headshotUrl,
   } = body;
+  // Normalize so the login email is always deterministic — stray casing
+  // from however it was typed here is what breaks login down the line.
+  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : body.email;
 
   if (!email || !firstName || !lastName || !nmlsNumber) {
     return NextResponse.json(
@@ -64,7 +67,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const existing = await prisma.user.findFirst({ where: { email: { equals: email, mode: "insensitive" } } });
   if (existing) {
     return NextResponse.json({ error: "Email already in use" }, { status: 409 });
   }
