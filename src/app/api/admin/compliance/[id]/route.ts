@@ -22,7 +22,12 @@ export async function GET(
   const flyer = await prisma.flyer.findUnique({
     where: { id },
     include: {
-      loanOfficer: { include: { user: { select: { email: true, isActive: true } } } },
+      loanOfficer: {
+        include: {
+          user: { select: { email: true, isActive: true } },
+          realtors: { orderBy: { createdAt: "desc" } },
+        },
+      },
       realtor: true,
     },
   });
@@ -44,23 +49,45 @@ export async function PATCH(
   if (!flyer) return NextResponse.json({ error: "Flyer not found" }, { status: 404 });
 
   const body = await req.json();
-  const { decision, reviewNotes, loanScenarios } = body as {
+  const {
+    decision, reviewNotes, loanScenarios,
+    templateId, propertyData, realtorId, qrCodeData, distributionState,
+  } = body as {
     decision?: "APPROVED" | "REJECTED";
     reviewNotes?: string;
     loanScenarios?: unknown;
+    templateId?: string;
+    propertyData?: unknown;
+    realtorId?: string | null;
+    qrCodeData?: string | null;
+    distributionState?: string | null;
   };
 
   if (decision !== undefined && decision !== "APPROVED" && decision !== "REJECTED") {
     return NextResponse.json({ error: "decision must be APPROVED or REJECTED" }, { status: 400 });
   }
 
-  // decision is optional: omitting it just saves the edited scenario figures
+  if (realtorId) {
+    const realtor = await prisma.realtor.findFirst({
+      where: { id: realtorId, loanOfficerId: flyer.loanOfficerId },
+    });
+    if (!realtor) {
+      return NextResponse.json({ error: "Realtor not found" }, { status: 400 });
+    }
+  }
+
+  // decision is optional: omitting it just saves the edited fields
   // (e.g. "Apply Changes") without recording an approve/reject verdict.
   const updated = await prisma.flyer.update({
     where: { id },
     data: {
       ...(reviewNotes !== undefined ? { reviewNotes: reviewNotes || null } : {}),
       ...(loanScenarios !== undefined ? { loanScenarios: loanScenarios as any } : {}),
+      ...(templateId !== undefined ? { templateId } : {}),
+      ...(propertyData !== undefined ? { propertyData: propertyData as any } : {}),
+      ...(realtorId !== undefined ? { realtorId: realtorId || null } : {}),
+      ...(qrCodeData !== undefined ? { qrCodeData: qrCodeData || null } : {}),
+      ...(distributionState !== undefined ? { distributionState: distributionState || null } : {}),
       ...(decision
         ? {
             approvalStatus: decision,
@@ -68,6 +95,15 @@ export async function PATCH(
             reviewedByUserId: (session!.user as any).id,
           }
         : {}),
+    },
+    include: {
+      loanOfficer: {
+        include: {
+          user: { select: { email: true, isActive: true } },
+          realtors: { orderBy: { createdAt: "desc" } },
+        },
+      },
+      realtor: true,
     },
   });
 
