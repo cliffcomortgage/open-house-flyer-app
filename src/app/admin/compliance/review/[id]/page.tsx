@@ -32,7 +32,8 @@ export default function ComplianceReviewPage() {
   const [isApplying, setIsApplying] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
-  const isSubmitting = isApplying || isPreviewing || isApproving;
+  const [isRequestingChanges, setIsRequestingChanges] = useState(false);
+  const isSubmitting = isApplying || isPreviewing || isApproving || isRequestingChanges;
 
   useEffect(() => {
     fetch(`/api/admin/compliance/${id}`)
@@ -185,6 +186,28 @@ export default function ComplianceReviewPage() {
     }
   };
 
+  const handleRequestChanges = async () => {
+    if (!notes.trim()) {
+      toast.error("Add a note explaining what needs to change before sending it back to the LO");
+      return;
+    }
+    setIsRequestingChanges(true);
+    try {
+      const res = await fetch(`/api/admin/compliance/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decision: "REJECTED", reviewNotes: notes, loanScenarios: scenarios }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Changes requested — LO will be notified");
+      router.push("/admin/compliance");
+    } catch {
+      toast.error("Failed to request changes");
+    } finally {
+      setIsRequestingChanges(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -329,11 +352,11 @@ export default function ComplianceReviewPage() {
         <h2 className="text-sm font-semibold text-slate-700 mb-3">Compliance notes</h2>
         <Textarea
           className="min-h-[90px] resize-none mb-4"
-          placeholder="Internal notes (optional)…"
+          placeholder="Internal notes, or what needs to change if sending this back to the LO…"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
-        <div className="flex gap-3">
+        <div className="flex gap-3 mb-3">
           <Button
             type="button"
             variant="outline"
@@ -353,6 +376,18 @@ export default function ComplianceReviewPage() {
           >
             {isPreviewing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
             Preview
+          </Button>
+        </div>
+        <div className="flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
+            onClick={handleRequestChanges}
+            disabled={isSubmitting}
+          >
+            {isRequestingChanges ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Request Changes
           </Button>
           <Button
             type="button"
