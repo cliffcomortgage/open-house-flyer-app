@@ -1,7 +1,7 @@
 import type { LoanOfficer, Realtor, CompanySettings, PropertyData } from "@/types";
 import { FlyerFooter } from "./FlyerFooter";
 import { PositionableImage, type PhotoPosition } from "./PositionableImage";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatTime } from "@/lib/utils";
 
 interface TemplateGalleryGridProps {
   propertyData: PropertyData;
@@ -33,7 +33,7 @@ export function TemplateGalleryGrid({
       })
     : null;
 
-  const timeStr = [propertyData.openHouseStartTime, propertyData.openHouseEndTime]
+  const timeStr = [formatTime(propertyData.openHouseStartTime), formatTime(propertyData.openHouseEndTime)]
     .filter(Boolean)
     .join(" – ");
 

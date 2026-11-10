@@ -1,7 +1,7 @@
 import type { LoanOfficer, Realtor, CompanySettings, PropertyData, LoanScenario } from "@/types";
 import { FlyerFooter } from "./FlyerFooter";
 import { PositionableImage, type PhotoPosition } from "./PositionableImage";
-import { formatCurrency, formatRate } from "@/lib/utils";
+import { formatCurrency, formatRate, formatTime } from "@/lib/utils";
 
 interface TemplateShowcaseOneRateProps {
   propertyData: PropertyData;
@@ -50,7 +50,7 @@ export function TemplateShowcaseOneRate({
       })
     : null;
 
-  const timeStr = [propertyData.openHouseStartTime, propertyData.openHouseEndTime]
+  const timeStr = [formatTime(propertyData.openHouseStartTime), formatTime(propertyData.openHouseEndTime)]
     .filter(Boolean)
     .join(" – ");
 
@@ -393,7 +393,7 @@ export function TemplateShowcaseOneRate({
                     />
                   )}
                   {scenario.loanAmount && (
-                    <ScenarioRow label="Base Loan Amt" value={formatCurrency(scenario.loanAmount)} />
+                    <ScenarioRow label="Base Loan Amount" value={formatCurrency(scenario.loanAmount)} />
                   )}
                   {scenario.upfrontMip && (
                     <ScenarioRow label="Upfront MIP (Financed)" value={formatCurrency(scenario.upfrontMip)} />
@@ -409,7 +409,7 @@ export function TemplateShowcaseOneRate({
                   )}
                   {scenario.taxesInsurance && (
                     <ScenarioRow
-                      label="Tax and Insurance"
+                      label="Taxes and Insurance"
                       value={`${formatCurrency(scenario.taxesInsurance)}/mo`}
                     />
                   )}
@@ -446,7 +446,7 @@ export function TemplateShowcaseOneRate({
                   )}
                   {scenario.taxesInsurance && (
                     <ScenarioRow
-                      label="Taxes & Insurance"
+                      label="Taxes and Insurance"
                       value={`${formatCurrency(scenario.taxesInsurance)}/mo`}
                     />
                   )}

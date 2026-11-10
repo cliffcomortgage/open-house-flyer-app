@@ -27,6 +27,21 @@ export function formatRate(rate: number): string {
   return `${rate.toFixed(3)}%`;
 }
 
+/**
+ * Converts a 24-hour "HH:MM" value (what an <input type="time"> always
+ * submits, regardless of locale) into a 12-hour "h:MM AM/PM" display string.
+ */
+export function formatTime(time: string | null | undefined): string | null {
+  if (!time) return null;
+  const match = time.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return time;
+  const hours24 = parseInt(match[1], 10);
+  const minutes = match[2];
+  const period = hours24 >= 12 ? "PM" : "AM";
+  const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+  return `${hours12}:${minutes} ${period}`;
+}
+
 export function formatCurrencyCents(amount: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",

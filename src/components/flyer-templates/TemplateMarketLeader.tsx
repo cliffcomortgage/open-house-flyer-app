@@ -1,7 +1,7 @@
 import type { LoanOfficer, Realtor, CompanySettings, PropertyData, LoanScenario } from "@/types";
 import { FlyerFooter } from "./FlyerFooter";
 import { PositionableImage, type PhotoPosition } from "./PositionableImage";
-import { formatCurrency, formatRate } from "@/lib/utils";
+import { formatCurrency, formatRate, formatTime } from "@/lib/utils";
 
 interface TemplateMarketLeaderProps {
   propertyData: PropertyData;
@@ -42,7 +42,7 @@ function ScenarioColumn({
           ? { label: "Down Payment", value: `${scenario.downPaymentPercent}%` }
           : null,
         scenario.loanAmount
-          ? { label: "Base Loan Amt", value: formatCurrency(scenario.loanAmount) }
+          ? { label: "Base Loan Amount", value: formatCurrency(scenario.loanAmount) }
           : null,
         scenario.upfrontMip
           ? { label: "Upfront MIP (Financed)", value: formatCurrency(scenario.upfrontMip) }
@@ -54,7 +54,7 @@ function ScenarioColumn({
           ? { label: "P&I", value: `${formatCurrency(scenario.piPayment)}/mo` }
           : null,
         scenario.taxesInsurance
-          ? { label: "Tax and Insurance", value: `${formatCurrency(scenario.taxesInsurance)}/mo` }
+          ? { label: "Taxes and Insurance", value: `${formatCurrency(scenario.taxesInsurance)}/mo` }
           : null,
         scenario.monthlyMip
           ? { label: "Monthly MIP", value: `${formatCurrency(scenario.monthlyMip)}/mo` }
@@ -66,16 +66,16 @@ function ScenarioColumn({
     : [
         ...rateRows,
         scenario.downPaymentPercent !== undefined
-          ? { label: "Down", value: `${scenario.downPaymentPercent}%` }
+          ? { label: "Down Payment", value: `${scenario.downPaymentPercent}%` }
           : null,
         scenario.loanAmount
-          ? { label: "Loan Amt", value: formatCurrency(scenario.loanAmount) }
+          ? { label: "Loan Amount", value: formatCurrency(scenario.loanAmount) }
           : null,
         scenario.piPayment
           ? { label: "P&I", value: `${formatCurrency(scenario.piPayment)}/mo` }
           : null,
         scenario.taxesInsurance
-          ? { label: "Tax+Ins", value: `${formatCurrency(scenario.taxesInsurance)}/mo` }
+          ? { label: "Taxes and Insurance", value: `${formatCurrency(scenario.taxesInsurance)}/mo` }
           : null,
         scenario.miPayment
           ? {
@@ -185,7 +185,7 @@ function ScenarioColumn({
               marginTop: "3px",
             }}
           >
-            <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#0f172a" }}>Est. Monthly Pmt</span>
+            <span style={{ fontSize: "9.5px", fontWeight: 700, color: "#0f172a" }}>Estimated Monthly Payment</span>
             <span
               style={{
                 fontSize: "15px",
@@ -225,7 +225,7 @@ export function TemplateMarketLeader({
       })
     : null;
 
-  const timeStr = [propertyData.openHouseStartTime, propertyData.openHouseEndTime]
+  const timeStr = [formatTime(propertyData.openHouseStartTime), formatTime(propertyData.openHouseEndTime)]
     .filter(Boolean)
     .join(" – ");
 
