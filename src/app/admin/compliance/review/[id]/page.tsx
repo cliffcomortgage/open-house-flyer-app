@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ChevronLeft, Loader2, ShieldCheck, ShieldAlert, Clock } from "lucide-react";
+import { ChevronLeft, Loader2, ShieldCheck, ShieldAlert, Clock, Eye, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,10 @@ export default function ComplianceReviewPage() {
   const [scenarios, setScenarios] = useState<Partial<LoanScenario>[]>([]);
   const [notes, setNotes] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const isSubmitting = isApplying || isPreviewing || isApproving;
 
   useEffect(() => {
     fetch(`/api/admin/compliance/${id}`)
@@ -126,29 +129,59 @@ export default function ComplianceReviewPage() {
     </div>
   );
 
-  const handleDecision = async (decision: "APPROVED" | "REJECTED") => {
-    if (decision === "REJECTED" && !notes.trim()) {
-      toast.error("Add a note explaining what needs to change before requesting changes");
-      return;
+  const saveScenarios = async () => {
+    const res = await fetch(`/api/admin/compliance/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reviewNotes: notes || null, loanScenarios: scenarios }),
+    });
+    if (!res.ok) throw new Error();
+    return res.json();
+  };
+
+  const handleApplyChanges = async () => {
+    setIsApplying(true);
+    try {
+      await saveScenarios();
+      toast.success("Changes applied");
+    } catch {
+      toast.error("Failed to save changes");
+    } finally {
+      setIsApplying(false);
     }
-    if (decision === "APPROVED" && scenarios.some((s) => getMissingScenarioFields(s).length > 0)) {
+  };
+
+  const handlePreview = async () => {
+    setIsPreviewing(true);
+    try {
+      await saveScenarios();
+      window.open(`/print/flyers/${id}`, "_blank");
+    } catch {
+      toast.error("Failed to save changes before preview");
+    } finally {
+      setIsPreviewing(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (scenarios.some((s) => getMissingScenarioFields(s).length > 0)) {
       toast.error("One or more scenarios are missing required fields — fill them in before approving");
       return;
     }
-    setIsSubmitting(true);
+    setIsApproving(true);
     try {
       const res = await fetch(`/api/admin/compliance/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decision, reviewNotes: notes || null, loanScenarios: scenarios }),
+        body: JSON.stringify({ decision: "APPROVED", reviewNotes: notes || null, loanScenarios: scenarios }),
       });
       if (!res.ok) throw new Error();
-      toast.success(decision === "APPROVED" ? "Flyer approved" : "Changes requested — LO will be notified");
+      toast.success("Flyer approved");
       router.push("/admin/compliance");
     } catch {
-      toast.error("Failed to save review decision");
+      toast.error("Failed to approve flyer");
     } finally {
-      setIsSubmitting(false);
+      setIsApproving(false);
     }
   };
 
@@ -194,11 +227,6 @@ export default function ComplianceReviewPage() {
             {flyer.realtor && ` · with ${flyer.realtor.firstName} ${flyer.realtor.lastName}, ${flyer.realtor.companyName}`}
           </p>
         </div>
-        <Button asChild variant="outline">
-          <Link href={`/print/flyers/${id}`} target="_blank">
-            View flyer
-          </Link>
-        </Button>
       </div>
 
       {/* Property summary */}
@@ -301,7 +329,7 @@ export default function ComplianceReviewPage() {
         <h2 className="text-sm font-semibold text-slate-700 mb-3">Compliance notes</h2>
         <Textarea
           className="min-h-[90px] resize-none mb-4"
-          placeholder="Notes for the loan officer (required if requesting changes)…"
+          placeholder="Internal notes (optional)…"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
@@ -309,21 +337,31 @@ export default function ComplianceReviewPage() {
           <Button
             type="button"
             variant="outline"
-            className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
-            onClick={() => handleDecision("REJECTED")}
+            className="flex-1"
+            onClick={handleApplyChanges}
             disabled={isSubmitting}
           >
-            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Request Changes
+            {isApplying ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+            Apply Changes
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            onClick={handlePreview}
+            disabled={isSubmitting}
+          >
+            {isPreviewing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+            Preview
           </Button>
           <Button
             type="button"
             style={{ backgroundColor: "#059669" }}
             className="text-white flex-1"
-            onClick={() => handleDecision("APPROVED")}
+            onClick={handleApprove}
             disabled={isSubmitting}
           >
-            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            {isApproving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
             Approve
           </Button>
         </div>

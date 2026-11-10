@@ -45,23 +45,29 @@ export async function PATCH(
 
   const body = await req.json();
   const { decision, reviewNotes, loanScenarios } = body as {
-    decision: "APPROVED" | "REJECTED";
+    decision?: "APPROVED" | "REJECTED";
     reviewNotes?: string;
     loanScenarios?: unknown;
   };
 
-  if (decision !== "APPROVED" && decision !== "REJECTED") {
+  if (decision !== undefined && decision !== "APPROVED" && decision !== "REJECTED") {
     return NextResponse.json({ error: "decision must be APPROVED or REJECTED" }, { status: 400 });
   }
 
+  // decision is optional: omitting it just saves the edited scenario figures
+  // (e.g. "Apply Changes") without recording an approve/reject verdict.
   const updated = await prisma.flyer.update({
     where: { id },
     data: {
-      approvalStatus: decision,
-      reviewedAt: new Date(),
-      reviewedByUserId: (session!.user as any).id,
-      reviewNotes: reviewNotes ?? null,
+      ...(reviewNotes !== undefined ? { reviewNotes: reviewNotes || null } : {}),
       ...(loanScenarios !== undefined ? { loanScenarios: loanScenarios as any } : {}),
+      ...(decision
+        ? {
+            approvalStatus: decision,
+            reviewedAt: new Date(),
+            reviewedByUserId: (session!.user as any).id,
+          }
+        : {}),
     },
   });
 
