@@ -14,19 +14,16 @@ interface TemplateShowcaseOneRateProps {
   onPhotoPositionChange?: (photoUrl: string, position: PhotoPosition) => void;
 }
 
-function ScenarioRow({ label, value }: { label: string; value: string }) {
+function ScenarioRow({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "4px 0",
-        borderBottom: "1px solid #f1f5f9",
-      }}
-    >
-      <span style={{ fontSize: "10.5px", color: "#64748b" }}>{label}</span>
-      <span style={{ fontSize: "11px", fontWeight: 600, color: "#1e293b" }}>{value}</span>
+    <div style={{ padding: "4px 0", borderBottom: "1px solid #f1f5f9" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: "10.5px", color: "#64748b" }}>{label}</span>
+        <span style={{ fontSize: "11px", fontWeight: 600, color: "#1e293b" }}>{value}</span>
+      </div>
+      {note && (
+        <p style={{ fontSize: "7.5px", color: "#94a3b8", margin: "2px 0 0", lineHeight: 1.3 }}>{note}</p>
+      )}
     </div>
   );
 }
@@ -322,101 +319,61 @@ export function TemplateShowcaseOneRate({
             Financing Scenario
           </div>
 
-          <div
-            style={{
-              border: `1px solid ${primaryColor}`,
-              display: "flex",
-              gap: "0",
-            }}
-          >
-            {/* Rate column */}
+          <div style={{ border: `1px solid ${primaryColor}` }}>
+            {/* Header: label + term badge. Rate/APR no longer get an oversized
+                showcase treatment — they're just rows below, same as everything else. */}
             <div
               style={{
-                padding: "14px 24px",
-                minWidth: "180px",
-                flexShrink: 0,
-                borderRight: "1px solid #e2e8f0",
                 display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "8px",
+                padding: "8px 16px",
+                borderBottom: `2px solid ${primaryColor}`,
+                background: "#fafafa",
               }}
             >
-              {scenario.label && (
-                <div
-                  style={{
-                    fontSize: "9px",
-                    color: primaryColor,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.14em",
-                    fontWeight: 700,
-                    marginBottom: "6px",
-                  }}
-                >
-                  {scenario.label}
-                </div>
-              )}
-              {!scenario.label && (scenario.term || scenario.loanType) && (
-                <div
-                  style={{
-                    fontSize: "9px",
-                    color: primaryColor,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.14em",
-                    fontWeight: 700,
-                    marginBottom: "6px",
-                  }}
-                >
-                  {[scenario.term && `${scenario.term}yr`, scenario.loanType]
-                    .filter(Boolean)
-                    .join(" ")}
-                </div>
-              )}
-              {scenario.interestRate && (
-                <div
-                  style={{
-                    fontSize: "40px",
-                    fontWeight: 900,
-                    color: "#0f172a",
-                    lineHeight: 1,
-                    letterSpacing: "-2px",
-                  }}
-                >
-                  {formatRate(scenario.interestRate)}
-                </div>
-              )}
               <div
                 style={{
-                  height: "2px",
-                  width: "32px",
-                  background: primaryColor,
-                  margin: "10px 0",
+                  fontSize: "10px",
+                  color: primaryColor,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.14em",
+                  fontWeight: 700,
                 }}
-              />
-              {scenario.apr && (
+              >
+                {scenario.label ||
+                  [scenario.term && `${scenario.term}yr`, scenario.loanType].filter(Boolean).join(" ")}
+              </div>
+              {scenario.term && (
                 <div
                   style={{
-                    fontSize: "40px",
-                    fontWeight: 900,
-                    color: "#0f172a",
-                    lineHeight: 1,
-                    letterSpacing: "-2px",
+                    fontSize: "8.5px",
+                    color: "#64748b",
+                    background: "#eef2f6",
+                    padding: "3px 8px",
+                    borderRadius: "999px",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
                   }}
                 >
-                  APR {formatRate(scenario.apr)}
+                  {scenario.term} year fixed rate
                 </div>
               )}
             </div>
 
-            {/* Breakdown */}
             <div
               style={{
-                flex: 1,
                 padding: "12px 24px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                columnGap: "32px",
               }}
             >
+              {scenario.interestRate && (
+                <ScenarioRow label="Rate" value={formatRate(scenario.interestRate)} />
+              )}
+              {scenario.apr && <ScenarioRow label="APR" value={formatRate(scenario.apr)} />}
               {scenario.purchasePrice && (
                 <ScenarioRow
                   label="Purchase Price"
@@ -494,7 +451,11 @@ export function TemplateShowcaseOneRate({
                     />
                   )}
                   {scenario.miPayment && (
-                    <ScenarioRow label="MI" value={`${formatCurrency(scenario.miPayment)}/mo`} />
+                    <ScenarioRow
+                      label="MI"
+                      value={`${formatCurrency(scenario.miPayment)}/mo`}
+                      note="MI quote based on estimated 700 credit score"
+                    />
                   )}
                   {scenario.vaFundingFee && (
                     <ScenarioRow label="VA Funding Fee" value={formatCurrency(scenario.vaFundingFee)} />
@@ -510,33 +471,33 @@ export function TemplateShowcaseOneRate({
                   )}
                 </>
               )}
-              {scenario.monthlyPayment && (
-                <div
+            </div>
+
+            {scenario.monthlyPayment && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "10px 24px",
+                  borderTop: `1px solid ${primaryColor}`,
+                }}
+              >
+                <span style={{ fontSize: "11px", fontWeight: 700, color: "#0f172a" }}>
+                  Estimated Monthly Payment
+                </span>
+                <span
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "10px 0 0",
-                    borderTop: "1px solid #e2e8f0",
-                    marginTop: "5px",
+                    fontSize: "22px",
+                    fontWeight: 900,
+                    color: primaryColor,
+                    letterSpacing: "-0.5px",
                   }}
                 >
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#0f172a" }}>
-                    Estimated Monthly Payment
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "22px",
-                      fontWeight: 900,
-                      color: primaryColor,
-                      letterSpacing: "-0.5px",
-                    }}
-                  >
-                    {formatCurrency(scenario.monthlyPayment)}/mo
-                  </span>
-                </div>
-              )}
-            </div>
+                  {formatCurrency(scenario.monthlyPayment)}/mo
+                </span>
+              </div>
+            )}
           </div>
 
           <p
