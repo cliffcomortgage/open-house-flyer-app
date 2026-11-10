@@ -113,7 +113,14 @@ function ScenarioColumn({
           </div>
           {scenario.apr && (
             <div
-              style={{ fontSize: "9px", color: "#94a3b8", marginTop: "4px", letterSpacing: "0.04em" }}
+              style={{
+                fontSize: "36px",
+                fontWeight: 900,
+                color: "#0f172a",
+                lineHeight: 1,
+                letterSpacing: "-1.5px",
+                marginTop: "6px",
+              }}
             >
               APR {formatRate(scenario.apr)}
             </div>

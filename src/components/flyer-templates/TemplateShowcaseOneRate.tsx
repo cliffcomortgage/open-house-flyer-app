@@ -374,11 +374,11 @@ export function TemplateShowcaseOneRate({
               {scenario.interestRate && (
                 <div
                   style={{
-                    fontSize: "58px",
+                    fontSize: "40px",
                     fontWeight: 900,
                     color: "#0f172a",
                     lineHeight: 1,
-                    letterSpacing: "-3px",
+                    letterSpacing: "-2px",
                   }}
                 >
                   {formatRate(scenario.interestRate)}
@@ -393,7 +393,15 @@ export function TemplateShowcaseOneRate({
                 }}
               />
               {scenario.apr && (
-                <div style={{ fontSize: "11px", color: "#64748b" }}>
+                <div
+                  style={{
+                    fontSize: "40px",
+                    fontWeight: 900,
+                    color: "#0f172a",
+                    lineHeight: 1,
+                    letterSpacing: "-2px",
+                  }}
+                >
                   APR {formatRate(scenario.apr)}
                 </div>
               )}
