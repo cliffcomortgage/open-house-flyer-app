@@ -89,6 +89,9 @@ model LoanOfficer {
   branchNmls    String?
   disclaimer    String?   @db.Text
   headshotUrl   String?
+  // Marks an internal/test account so its flyers, realtors, and logins are
+  // left out of admin analytics without deleting any of its data.
+  excludeFromAnalytics Boolean @default(false)
   realtors      Realtor[]
   flyers        Flyer[]
   createdAt     DateTime  @default(now())

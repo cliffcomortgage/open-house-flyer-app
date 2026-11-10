@@ -12,6 +12,11 @@ export async function getAdminAnalytics() {
   const now = new Date();
   const twelveWeeksAgo = new Date(now.getTime() - 12 * WINDOWS.week);
 
+  // Excludes internal/test LO accounts (flagged via excludeFromAnalytics)
+  // from every query below — their flyers, realtors, and logins included.
+  // Non-LO users (admins, realtors) are never excluded by this filter.
+  const notExcludedLO = { OR: [{ loanOfficer: null }, { loanOfficer: { excludeFromAnalytics: false } }] };
+
   const [
     loanOfficers,
     realtors,
@@ -25,6 +30,7 @@ export async function getAdminAnalytics() {
     loanOfficerLoginCounts,
   ] = await Promise.all([
     prisma.loanOfficer.findMany({
+      where: { excludeFromAnalytics: false },
       select: {
         id: true,
         userId: true,
@@ -38,9 +44,11 @@ export async function getAdminAnalytics() {
       orderBy: { createdAt: "asc" },
     }),
     prisma.realtor.findMany({
+      where: { loanOfficer: { excludeFromAnalytics: false } },
       select: { id: true, userId: true, loanOfficerId: true, createdAt: true, user: { select: { password: true } } },
     }),
     prisma.flyer.findMany({
+      where: { loanOfficer: { excludeFromAnalytics: false } },
       select: {
         id: true,
         status: true,
@@ -51,16 +59,21 @@ export async function getAdminAnalytics() {
         createdAt: true,
       },
     }),
-    prisma.loginEvent.count(),
-    prisma.loginEvent.count({ where: { createdAt: { gte: new Date(now.getTime() - WINDOWS.week) } } }),
-    prisma.loginEvent.count({ where: { createdAt: { gte: new Date(now.getTime() - WINDOWS.month) } } }),
-    prisma.loginEvent.count({ where: { createdAt: { gte: new Date(now.getTime() - WINDOWS.quarter) } } }),
-    prisma.loginEvent.count({ where: { createdAt: { gte: new Date(now.getTime() - WINDOWS.year) } } }),
+    prisma.loginEvent.count({ where: { user: notExcludedLO } }),
+    prisma.loginEvent.count({ where: { user: notExcludedLO, createdAt: { gte: new Date(now.getTime() - WINDOWS.week) } } }),
+    prisma.loginEvent.count({ where: { user: notExcludedLO, createdAt: { gte: new Date(now.getTime() - WINDOWS.month) } } }),
+    prisma.loginEvent.count({ where: { user: notExcludedLO, createdAt: { gte: new Date(now.getTime() - WINDOWS.quarter) } } }),
+    prisma.loginEvent.count({ where: { user: notExcludedLO, createdAt: { gte: new Date(now.getTime() - WINDOWS.year) } } }),
     prisma.loginEvent.findMany({
-      where: { createdAt: { gte: twelveWeeksAgo } },
+      where: { user: notExcludedLO, createdAt: { gte: twelveWeeksAgo } },
       select: { createdAt: true },
     }),
-    prisma.loginEvent.groupBy({ by: ["userId"], _count: { _all: true }, _max: { createdAt: true } }),
+    prisma.loginEvent.groupBy({
+      by: ["userId"],
+      where: { user: notExcludedLO },
+      _count: { _all: true },
+      _max: { createdAt: true },
+    }),
   ]);
 
   // Per-LO rolling-window login counts (one query per window, grouped by user)
