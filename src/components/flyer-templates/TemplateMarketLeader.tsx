@@ -21,12 +21,23 @@ function ScenarioColumn({
   scenario: LoanScenario;
   primaryColor: string;
 }) {
+  type Row = { label: string; value: string; note?: string };
+
   const isFHA = scenario.loanType === "FHA";
   const fullyFinancedLoanAmount =
     scenario.loanAmount && scenario.upfrontMip ? scenario.loanAmount + scenario.upfrontMip : undefined;
 
-  const rows = isFHA
+  // Rate and APR are now plain rows in the same list as everything else —
+  // they're informational, not the main advertised figure, so they no
+  // longer get special oversized treatment.
+  const rateRows: (Row | null)[] = [
+    scenario.interestRate ? { label: "Rate", value: formatRate(scenario.interestRate) } : null,
+    scenario.apr ? { label: "APR", value: formatRate(scenario.apr) } : null,
+  ];
+
+  const rows: Row[] = (isFHA
     ? [
+        ...rateRows,
         scenario.downPaymentPercent !== undefined
           ? { label: "Down Payment", value: `${scenario.downPaymentPercent}%` }
           : null,
@@ -53,6 +64,7 @@ function ScenarioColumn({
           : null,
       ].filter(Boolean)
     : [
+        ...rateRows,
         scenario.downPaymentPercent !== undefined
           ? { label: "Down", value: `${scenario.downPaymentPercent}%` }
           : null,
@@ -66,7 +78,11 @@ function ScenarioColumn({
           ? { label: "Tax+Ins", value: `${formatCurrency(scenario.taxesInsurance)}/mo` }
           : null,
         scenario.miPayment
-          ? { label: "MI", value: `${formatCurrency(scenario.miPayment)}/mo` }
+          ? {
+              label: "MI",
+              value: `${formatCurrency(scenario.miPayment)}/mo`,
+              note: "MI quote based on estimated 700 credit score",
+            }
           : null,
         scenario.vaFundingFee
           ? { label: "VA Funding Fee", value: formatCurrency(scenario.vaFundingFee) }
@@ -80,7 +96,7 @@ function ScenarioColumn({
         scenario.hoaFee
           ? { label: "HOA", value: `${formatCurrency(scenario.hoaFee)}/mo` }
           : null,
-      ].filter(Boolean);
+      ].filter(Boolean)) as Row[];
 
   return (
     <div
@@ -98,6 +114,10 @@ function ScenarioColumn({
           borderBottom: `2px solid ${primaryColor}`,
           padding: "7px 12px",
           background: "#fafafa",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "6px",
         }}
       >
         <div
@@ -114,60 +134,43 @@ function ScenarioColumn({
               .filter(Boolean)
               .join(" ")}
         </div>
-      </div>
-
-      {/* Rate */}
-      {scenario.interestRate && (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "9px 8px 7px",
-            borderBottom: "1px solid #f1f5f9",
-          }}
-        >
+        {scenario.term && (
           <div
             style={{
-              fontSize: "36px",
-              fontWeight: 900,
-              color: "#0f172a",
-              lineHeight: 1,
-              letterSpacing: "-1.5px",
+              fontSize: "7.5px",
+              color: "#64748b",
+              background: "#eef2f6",
+              padding: "2px 6px",
+              borderRadius: "999px",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
-            {formatRate(scenario.interestRate)}
+            {scenario.term} year fixed rate
           </div>
-          {scenario.apr && (
-            <div
-              style={{
-                fontSize: "36px",
-                fontWeight: 900,
-                color: "#0f172a",
-                lineHeight: 1,
-                letterSpacing: "-1.5px",
-                marginTop: "6px",
-              }}
-            >
-              APR {formatRate(scenario.apr)}
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Breakdown rows */}
       <div style={{ padding: "6px 12px", flex: 1 }}>
         {rows.map((row, idx) => (
-          <div
-            key={idx}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              padding: "2.5px 0",
-              fontSize: "10px",
-              borderTop: idx > 0 ? "1px solid #f8fafc" : "none",
-            }}
-          >
-            <span style={{ color: "#64748b" }}>{row!.label}</span>
-            <span style={{ fontWeight: 600, color: "#1e293b" }}>{row!.value}</span>
+          <div key={idx} style={{ borderTop: idx > 0 ? "1px solid #f8fafc" : "none" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "2.5px 0",
+                fontSize: "10px",
+              }}
+            >
+              <span style={{ color: "#64748b" }}>{row.label}</span>
+              <span style={{ fontWeight: 600, color: "#1e293b" }}>{row.value}</span>
+            </div>
+            {row.note && (
+              <p style={{ fontSize: "7px", color: "#94a3b8", margin: "0 0 2px", lineHeight: 1.3 }}>
+                {row.note}
+              </p>
+            )}
           </div>
         ))}
 
