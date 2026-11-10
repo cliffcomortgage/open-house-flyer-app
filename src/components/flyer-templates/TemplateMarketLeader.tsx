@@ -21,41 +21,66 @@ function ScenarioColumn({
   scenario: LoanScenario;
   primaryColor: string;
 }) {
-  const rows = [
-    scenario.downPaymentPercent !== undefined
-      ? { label: "Down", value: `${scenario.downPaymentPercent}%` }
-      : null,
-    scenario.loanAmount
-      ? { label: "Loan Amt", value: formatCurrency(scenario.loanAmount) }
-      : null,
-    scenario.piPayment
-      ? { label: "P&I", value: `${formatCurrency(scenario.piPayment)}/mo` }
-      : null,
-    scenario.taxesInsurance
-      ? { label: "Tax+Ins", value: `${formatCurrency(scenario.taxesInsurance)}/mo` }
-      : null,
-    scenario.miPayment
-      ? { label: "MI", value: `${formatCurrency(scenario.miPayment)}/mo` }
-      : null,
-    scenario.upfrontMip
-      ? { label: "Upfront MIP", value: formatCurrency(scenario.upfrontMip) }
-      : null,
-    scenario.monthlyMip
-      ? { label: "Monthly MIP", value: `${formatCurrency(scenario.monthlyMip)}/mo` }
-      : null,
-    scenario.vaFundingFee
-      ? { label: "VA Funding Fee", value: formatCurrency(scenario.vaFundingFee) }
-      : null,
-    scenario.usdaGuaranteeFee
-      ? { label: "Upfront Guarantee Fee", value: formatCurrency(scenario.usdaGuaranteeFee) }
-      : null,
-    scenario.usdaAnnualFee
-      ? { label: "Annual Fee", value: `${formatCurrency(scenario.usdaAnnualFee)}/mo` }
-      : null,
-    scenario.hoaFee
-      ? { label: "HOA", value: `${formatCurrency(scenario.hoaFee)}/mo` }
-      : null,
-  ].filter(Boolean);
+  const isFHA = scenario.loanType === "FHA";
+  const fullyFinancedLoanAmount =
+    scenario.loanAmount && scenario.upfrontMip ? scenario.loanAmount + scenario.upfrontMip : undefined;
+
+  const rows = isFHA
+    ? [
+        scenario.downPaymentPercent !== undefined
+          ? { label: "Down Payment", value: `${scenario.downPaymentPercent}%` }
+          : null,
+        scenario.loanAmount
+          ? { label: "Base Loan Amt", value: formatCurrency(scenario.loanAmount) }
+          : null,
+        scenario.upfrontMip
+          ? { label: "Upfront MIP (Financed)", value: formatCurrency(scenario.upfrontMip) }
+          : null,
+        fullyFinancedLoanAmount
+          ? { label: "Fully Financed Loan Amount", value: formatCurrency(fullyFinancedLoanAmount) }
+          : null,
+        scenario.piPayment
+          ? { label: "P&I", value: `${formatCurrency(scenario.piPayment)}/mo` }
+          : null,
+        scenario.taxesInsurance
+          ? { label: "Tax and Insurance", value: `${formatCurrency(scenario.taxesInsurance)}/mo` }
+          : null,
+        scenario.monthlyMip
+          ? { label: "Monthly MIP", value: `${formatCurrency(scenario.monthlyMip)}/mo` }
+          : null,
+        scenario.hoaFee
+          ? { label: "HOA", value: `${formatCurrency(scenario.hoaFee)}/mo` }
+          : null,
+      ].filter(Boolean)
+    : [
+        scenario.downPaymentPercent !== undefined
+          ? { label: "Down", value: `${scenario.downPaymentPercent}%` }
+          : null,
+        scenario.loanAmount
+          ? { label: "Loan Amt", value: formatCurrency(scenario.loanAmount) }
+          : null,
+        scenario.piPayment
+          ? { label: "P&I", value: `${formatCurrency(scenario.piPayment)}/mo` }
+          : null,
+        scenario.taxesInsurance
+          ? { label: "Tax+Ins", value: `${formatCurrency(scenario.taxesInsurance)}/mo` }
+          : null,
+        scenario.miPayment
+          ? { label: "MI", value: `${formatCurrency(scenario.miPayment)}/mo` }
+          : null,
+        scenario.vaFundingFee
+          ? { label: "VA Funding Fee", value: formatCurrency(scenario.vaFundingFee) }
+          : null,
+        scenario.usdaGuaranteeFee
+          ? { label: "Upfront Guarantee Fee", value: formatCurrency(scenario.usdaGuaranteeFee) }
+          : null,
+        scenario.usdaAnnualFee
+          ? { label: "Annual Fee", value: `${formatCurrency(scenario.usdaAnnualFee)}/mo` }
+          : null,
+        scenario.hoaFee
+          ? { label: "HOA", value: `${formatCurrency(scenario.hoaFee)}/mo` }
+          : null,
+      ].filter(Boolean);
 
   return (
     <div

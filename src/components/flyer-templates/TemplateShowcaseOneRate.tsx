@@ -423,54 +423,92 @@ export function TemplateShowcaseOneRate({
                   value={formatCurrency(scenario.purchasePrice)}
                 />
               )}
-              {scenario.downPaymentPercent !== undefined && (
-                <ScenarioRow
-                  label="Down Payment"
-                  value={`${scenario.downPaymentPercent}%${
-                    scenario.downPaymentAmount
-                      ? ` (${formatCurrency(scenario.downPaymentAmount)})`
-                      : ""
-                  }`}
-                />
-              )}
-              {scenario.loanAmount && (
-                <ScenarioRow
-                  label="Loan Amount"
-                  value={formatCurrency(scenario.loanAmount)}
-                />
-              )}
-              {scenario.piPayment && (
-                <ScenarioRow
-                  label="P&I Payment"
-                  value={`${formatCurrency(scenario.piPayment)}/mo`}
-                />
-              )}
-              {scenario.taxesInsurance && (
-                <ScenarioRow
-                  label="Taxes & Insurance"
-                  value={`${formatCurrency(scenario.taxesInsurance)}/mo`}
-                />
-              )}
-              {scenario.miPayment && (
-                <ScenarioRow label="MI" value={`${formatCurrency(scenario.miPayment)}/mo`} />
-              )}
-              {scenario.upfrontMip && (
-                <ScenarioRow label="Upfront MIP" value={formatCurrency(scenario.upfrontMip)} />
-              )}
-              {scenario.monthlyMip && (
-                <ScenarioRow label="Monthly MIP" value={`${formatCurrency(scenario.monthlyMip)}/mo`} />
-              )}
-              {scenario.vaFundingFee && (
-                <ScenarioRow label="VA Funding Fee" value={formatCurrency(scenario.vaFundingFee)} />
-              )}
-              {scenario.usdaGuaranteeFee && (
-                <ScenarioRow label="Upfront Guarantee Fee" value={formatCurrency(scenario.usdaGuaranteeFee)} />
-              )}
-              {scenario.usdaAnnualFee && (
-                <ScenarioRow label="Annual Fee" value={`${formatCurrency(scenario.usdaAnnualFee)}/mo`} />
-              )}
-              {scenario.hoaFee && (
-                <ScenarioRow label="HOA" value={`${formatCurrency(scenario.hoaFee)}/mo`} />
+              {scenario.loanType === "FHA" ? (
+                <>
+                  {scenario.downPaymentPercent !== undefined && (
+                    <ScenarioRow
+                      label="Down Payment"
+                      value={`${scenario.downPaymentPercent}%${
+                        scenario.downPaymentAmount
+                          ? ` (${formatCurrency(scenario.downPaymentAmount)})`
+                          : ""
+                      }`}
+                    />
+                  )}
+                  {scenario.loanAmount && (
+                    <ScenarioRow label="Base Loan Amt" value={formatCurrency(scenario.loanAmount)} />
+                  )}
+                  {scenario.upfrontMip && (
+                    <ScenarioRow label="Upfront MIP (Financed)" value={formatCurrency(scenario.upfrontMip)} />
+                  )}
+                  {scenario.loanAmount && scenario.upfrontMip && (
+                    <ScenarioRow
+                      label="Fully Financed Loan Amount"
+                      value={formatCurrency(scenario.loanAmount + scenario.upfrontMip)}
+                    />
+                  )}
+                  {scenario.piPayment && (
+                    <ScenarioRow label="P&I" value={`${formatCurrency(scenario.piPayment)}/mo`} />
+                  )}
+                  {scenario.taxesInsurance && (
+                    <ScenarioRow
+                      label="Tax and Insurance"
+                      value={`${formatCurrency(scenario.taxesInsurance)}/mo`}
+                    />
+                  )}
+                  {scenario.monthlyMip && (
+                    <ScenarioRow label="Monthly MIP" value={`${formatCurrency(scenario.monthlyMip)}/mo`} />
+                  )}
+                  {scenario.hoaFee && (
+                    <ScenarioRow label="HOA" value={`${formatCurrency(scenario.hoaFee)}/mo`} />
+                  )}
+                </>
+              ) : (
+                <>
+                  {scenario.downPaymentPercent !== undefined && (
+                    <ScenarioRow
+                      label="Down Payment"
+                      value={`${scenario.downPaymentPercent}%${
+                        scenario.downPaymentAmount
+                          ? ` (${formatCurrency(scenario.downPaymentAmount)})`
+                          : ""
+                      }`}
+                    />
+                  )}
+                  {scenario.loanAmount && (
+                    <ScenarioRow
+                      label="Loan Amount"
+                      value={formatCurrency(scenario.loanAmount)}
+                    />
+                  )}
+                  {scenario.piPayment && (
+                    <ScenarioRow
+                      label="P&I Payment"
+                      value={`${formatCurrency(scenario.piPayment)}/mo`}
+                    />
+                  )}
+                  {scenario.taxesInsurance && (
+                    <ScenarioRow
+                      label="Taxes & Insurance"
+                      value={`${formatCurrency(scenario.taxesInsurance)}/mo`}
+                    />
+                  )}
+                  {scenario.miPayment && (
+                    <ScenarioRow label="MI" value={`${formatCurrency(scenario.miPayment)}/mo`} />
+                  )}
+                  {scenario.vaFundingFee && (
+                    <ScenarioRow label="VA Funding Fee" value={formatCurrency(scenario.vaFundingFee)} />
+                  )}
+                  {scenario.usdaGuaranteeFee && (
+                    <ScenarioRow label="Upfront Guarantee Fee" value={formatCurrency(scenario.usdaGuaranteeFee)} />
+                  )}
+                  {scenario.usdaAnnualFee && (
+                    <ScenarioRow label="Annual Fee" value={`${formatCurrency(scenario.usdaAnnualFee)}/mo`} />
+                  )}
+                  {scenario.hoaFee && (
+                    <ScenarioRow label="HOA" value={`${formatCurrency(scenario.hoaFee)}/mo`} />
+                  )}
+                </>
               )}
               {scenario.monthlyPayment && (
                 <div
