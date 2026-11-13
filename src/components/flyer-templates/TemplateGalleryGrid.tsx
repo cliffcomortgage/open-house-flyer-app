@@ -37,10 +37,6 @@ export function TemplateGalleryGrid({
     .filter(Boolean)
     .join(" – ");
 
-  // lotSize may come from the Zillow lookup as "4,350 Square Feet" — split the
-  // number from its unit so the unit becomes the (small) label, not more big text.
-  const lotSizeMatch = propertyData.lotSize?.match(/^([\d,.]+)\s*(.*)$/);
-
   const stats = [
     propertyData.bedrooms ? { label: "Beds", value: propertyData.bedrooms } : null,
     propertyData.bathrooms ? { label: "Baths", value: propertyData.bathrooms } : null,
@@ -48,12 +44,6 @@ export function TemplateGalleryGrid({
       ? { label: "Sq Ft", value: propertyData.squareFeet.toLocaleString() }
       : null,
     propertyData.yearBuilt ? { label: "Year Built", value: propertyData.yearBuilt } : null,
-    propertyData.lotSize
-      ? {
-          label: lotSizeMatch?.[2] || "Lot Size",
-          value: lotSizeMatch?.[1] || propertyData.lotSize,
-        }
-      : null,
     propertyData.garage ? { label: "Garage", value: propertyData.garage } : null,
     propertyData.stories ? { label: "Stories", value: propertyData.stories } : null,
     propertyData.units ? { label: "Units", value: propertyData.units } : null,
