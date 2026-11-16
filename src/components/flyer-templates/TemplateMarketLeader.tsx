@@ -24,8 +24,10 @@ function ScenarioColumn({
   type Row = { label: string; value: string; note?: string };
 
   const isFHA = scenario.loanType === "FHA";
+  const isVA = scenario.loanType === "VA";
+  const financedFee = isFHA ? scenario.upfrontMip : isVA ? scenario.vaFundingFee : undefined;
   const fullyFinancedLoanAmount =
-    scenario.loanAmount && scenario.upfrontMip ? scenario.loanAmount + scenario.upfrontMip : undefined;
+    scenario.loanAmount && financedFee ? scenario.loanAmount + financedFee : undefined;
 
   // Rate and APR are now plain rows in the same list as everything else —
   // they're informational, not the main advertised figure, so they no
@@ -63,6 +65,31 @@ function ScenarioColumn({
           ? { label: "HOA", value: `${formatCurrency(scenario.hoaFee)}/mo` }
           : null,
       ].filter(Boolean)
+    : isVA
+    ? [
+        ...rateRows,
+        scenario.downPaymentPercent !== undefined
+          ? { label: "Down Payment", value: `${scenario.downPaymentPercent}%` }
+          : null,
+        scenario.loanAmount
+          ? { label: "Base Loan Amount", value: formatCurrency(scenario.loanAmount) }
+          : null,
+        scenario.vaFundingFee
+          ? { label: "VA Funding Fee (Financed)", value: formatCurrency(scenario.vaFundingFee) }
+          : null,
+        fullyFinancedLoanAmount
+          ? { label: "Fully Financed Loan Amount", value: formatCurrency(fullyFinancedLoanAmount) }
+          : null,
+        scenario.piPayment
+          ? { label: "P&I", value: `${formatCurrency(scenario.piPayment)}/mo` }
+          : null,
+        scenario.taxesInsurance
+          ? { label: "Taxes and Insurance", value: `${formatCurrency(scenario.taxesInsurance)}/mo` }
+          : null,
+        scenario.hoaFee
+          ? { label: "HOA", value: `${formatCurrency(scenario.hoaFee)}/mo` }
+          : null,
+      ].filter(Boolean)
     : [
         ...rateRows,
         scenario.downPaymentPercent !== undefined
@@ -83,9 +110,6 @@ function ScenarioColumn({
               value: `${formatCurrency(scenario.miPayment)}/mo`,
               note: "MI quote based on estimated 700 credit score",
             }
-          : null,
-        scenario.vaFundingFee
-          ? { label: "VA Funding Fee", value: formatCurrency(scenario.vaFundingFee) }
           : null,
         scenario.usdaGuaranteeFee
           ? { label: "Upfront Guarantee Fee", value: formatCurrency(scenario.usdaGuaranteeFee) }

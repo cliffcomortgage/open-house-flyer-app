@@ -420,6 +420,43 @@ export function TemplateShowcaseOneRate({
                     <ScenarioRow label="HOA" value={`${formatCurrency(scenario.hoaFee)}/mo`} />
                   )}
                 </>
+              ) : scenario.loanType === "VA" ? (
+                <>
+                  {scenario.downPaymentPercent !== undefined && (
+                    <ScenarioRow
+                      label="Down Payment"
+                      value={`${scenario.downPaymentPercent}%${
+                        scenario.downPaymentAmount
+                          ? ` (${formatCurrency(scenario.downPaymentAmount)})`
+                          : ""
+                      }`}
+                    />
+                  )}
+                  {scenario.loanAmount && (
+                    <ScenarioRow label="Base Loan Amount" value={formatCurrency(scenario.loanAmount)} />
+                  )}
+                  {scenario.vaFundingFee && (
+                    <ScenarioRow label="VA Funding Fee (Financed)" value={formatCurrency(scenario.vaFundingFee)} />
+                  )}
+                  {scenario.loanAmount && scenario.vaFundingFee && (
+                    <ScenarioRow
+                      label="Fully Financed Loan Amount"
+                      value={formatCurrency(scenario.loanAmount + scenario.vaFundingFee)}
+                    />
+                  )}
+                  {scenario.piPayment && (
+                    <ScenarioRow label="P&I" value={`${formatCurrency(scenario.piPayment)}/mo`} />
+                  )}
+                  {scenario.taxesInsurance && (
+                    <ScenarioRow
+                      label="Taxes and Insurance"
+                      value={`${formatCurrency(scenario.taxesInsurance)}/mo`}
+                    />
+                  )}
+                  {scenario.hoaFee && (
+                    <ScenarioRow label="HOA" value={`${formatCurrency(scenario.hoaFee)}/mo`} />
+                  )}
+                </>
               ) : (
                 <>
                   {scenario.downPaymentPercent !== undefined && (
@@ -456,9 +493,6 @@ export function TemplateShowcaseOneRate({
                       value={`${formatCurrency(scenario.miPayment)}/mo`}
                       note="MI quote based on estimated 700 credit score"
                     />
-                  )}
-                  {scenario.vaFundingFee && (
-                    <ScenarioRow label="VA Funding Fee" value={formatCurrency(scenario.vaFundingFee)} />
                   )}
                   {scenario.usdaGuaranteeFee && (
                     <ScenarioRow label="Upfront Guarantee Fee" value={formatCurrency(scenario.usdaGuaranteeFee)} />
